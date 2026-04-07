@@ -38,6 +38,10 @@ async function writeJson(filePath, data) {
   await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
 }
 
+/**
+ * Tool implementation: query mock calendar events.
+ * Supports exact date lookup, range lookup, and keyword filtering.
+ */
 export async function getCalendarEvents(input = {}) {
   const { date, rangeStart, rangeEnd, keyword } = calendarQuerySchema.parse(input);
   const events = await readJson(calendarPath);
@@ -56,6 +60,9 @@ export async function getCalendarEvents(input = {}) {
   });
 }
 
+/**
+ * Tool implementation: create a mock calendar event and persist it.
+ */
 export async function createCalendarEvent(input) {
   const parsed = createEventSchema.parse(input);
   const events = await readJson(calendarPath);
@@ -70,6 +77,9 @@ export async function createCalendarEvent(input) {
   return newEvent;
 }
 
+/**
+ * Tool implementation: search a lightweight personal knowledge base.
+ */
 export async function searchNotes(input) {
   const { query } = notesSearchSchema.parse(input);
   const notes = await readJson(notesPath);
@@ -80,6 +90,11 @@ export async function searchNotes(input) {
   );
 }
 
+/**
+ * Anthropic-compatible tool definitions.
+ * These schemas are deliberately explicit so interviewers can see a clean
+ * function-calling contract between the LLM and the execution layer.
+ */
 export const anthropicTools = [
   {
     name: 'get_calendar_events',
@@ -126,6 +141,10 @@ export const anthropicTools = [
   }
 ];
 
+/**
+ * Single dispatch entry for tool execution.
+ * This keeps the orchestration layer clean and makes future tool expansion easy.
+ */
 export async function executeTool(name, input) {
   switch (name) {
     case 'get_calendar_events':

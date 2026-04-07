@@ -85,6 +85,14 @@ npm run dev:server
 npm run dev:client
 ```
 
+如果你想使用单一生产启动命令，也可以先 build 再启动服务端：  
+If you prefer a simple production-style flow, build first and then start the server:
+
+```bash
+npm run build
+npm start
+```
+
 - 前端 / Frontend: <http://localhost:5173>
 - 后端 / Backend: <http://localhost:3001>
 
@@ -152,7 +160,17 @@ chargeflow-agent/
 
 ---
 
-## 9. 后续可扩展方向 / Future Improvements
+## 9. 运行检查清单 / Run Checklist
+- [ ] 本地跑通前后端 / Run frontend and backend locally
+- [ ] 验证对话、工具调用、记忆都正常 / Verify chat, tool calls, and memory work
+- [ ] 将截图放入 `docs/screenshots/` / Save screenshots into `docs/screenshots/`
+- [ ] 确认 `.env` 未提交 / Make sure `.env` is not committed
+- [ ] 推送到 GitHub public repo / Push to a public GitHub repository
+- [ ] 把 repo 链接填到申请表 / Paste the repo link into your application form
+
+---
+
+## 10. 后续可扩展方向 / Future Improvements
 - 接入真实 Google Calendar / Notion / Email API  
   Integrate real Google Calendar / Notion / Email APIs
 - 加入用户身份与多租户隔离  

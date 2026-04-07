@@ -20,6 +20,9 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api/chat', chatRouter);
 
+/**
+ * Lightweight calendar read endpoint used by the UI and local debugging.
+ */
 app.get('/api/calendar/events', async (req, res) => {
   try {
     const events = await getCalendarEvents(req.query);
@@ -29,6 +32,10 @@ app.get('/api/calendar/events', async (req, res) => {
   }
 });
 
+/**
+ * Mock event creation endpoint.
+ * Mirrors the interface shape of a real scheduling integration.
+ */
 app.post('/api/calendar/events', async (req, res) => {
   try {
     const event = await createCalendarEvent(req.body);
@@ -38,6 +45,9 @@ app.post('/api/calendar/events', async (req, res) => {
   }
 });
 
+/**
+ * Durable memory inspection endpoint for the right-hand memory panel.
+ */
 app.get('/api/memory', async (_req, res) => {
   try {
     const memory = await getMemorySnapshot();

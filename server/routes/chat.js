@@ -3,6 +3,13 @@ import { runAgentTurn } from '../services/llm.js';
 
 const router = Router();
 
+/**
+ * Main chat endpoint.
+ * Receives the full visible conversation from the frontend and returns:
+ * - assistant message
+ * - tool call trace
+ * - updated durable memory snapshot
+ */
 router.post('/', async (req, res) => {
   try {
     const { messages = [] } = req.body;

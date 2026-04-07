@@ -6,6 +6,11 @@ const apiKey = process.env.ANTHROPIC_API_KEY;
 const model = process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022';
 const anthropic = apiKey ? new Anthropic({ apiKey }) : null;
 
+/**
+ * Prompt layering is one of the main portfolio talking points of this project.
+ * The structure intentionally mirrors the prompt-design doc:
+ * role -> tools -> memory -> constraints.
+ */
 function buildSystemPrompt(memoryText) {
   return `You are ChargeFlow Agent, a personal AI assistant built for a portfolio demo.
 
@@ -37,6 +42,9 @@ function toAnthropicMessages(messages) {
   }));
 }
 
+/**
+ * Mock fallback keeps the demo operational when no Anthropic API key is present.
+ */
 function createMockResponse(messages, memory) {
   const latest = messages[messages.length - 1]?.content?.toLowerCase?.() || '';
   const toolCalls = [];
@@ -75,6 +83,13 @@ function createMockResponse(messages, memory) {
   };
 }
 
+/**
+ * Core orchestration loop:
+ * 1. inject memory into system prompt
+ * 2. call Claude
+ * 3. execute tool_use blocks if present
+ * 4. return final answer + tool trace + updated memory
+ */
 export async function runAgentTurn(messages) {
   const memory = await getMemorySnapshot();
   const systemPrompt = buildSystemPrompt(formatMemoryForPrompt(memory));
@@ -94,7 +109,7 @@ export async function runAgentTurn(messages) {
   });
 
   const toolCalls = [];
-  let followUpMessages = [...toAnthropicMessages(messages)];
+  const followUpMessages = [...toAnthropicMessages(messages)];
 
   for (const block of initial.content) {
     if (block.type === 'tool_use') {

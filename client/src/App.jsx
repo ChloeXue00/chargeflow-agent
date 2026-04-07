@@ -3,6 +3,14 @@ import MemoryPanel from './components/MemoryPanel';
 import ToolCallDisplay from './components/ToolCallDisplay';
 import { useChat } from './hooks/useChat';
 
+/**
+ * Portfolio-facing single page UI.
+ *
+ * The layout intentionally surfaces three things interviewers care about:
+ * 1. the chat product experience,
+ * 2. the agent's tool orchestration trace,
+ * 3. the durable memory state.
+ */
 export default function App() {
   const { messages, toolCalls, rememberedFacts, loading, error, sendMessage, resetChat } = useChat();
 
