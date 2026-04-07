@@ -152,23 +152,4 @@ chargeflow-agent/
 
 
 
-## 9. 运行检查清单 / Run Checklist
-- [ ] 本地跑通前后端 / Run frontend and backend locally
-- [ ] 验证对话、工具调用、记忆都正常 / Verify chat, tool calls, and memory work
-- [ ] 将截图放入 `docs/screenshots/` / Save screenshots into `docs/screenshots/`
-- [ ] 确认 `.env` 未提交 / Make sure `.env` is not committed
-- [ ] 推送到 GitHub public repo / Push to a public GitHub repository
-- [ ] 把 repo 链接填到申请表 / Paste the repo link into your application form
-
----
-
-## 10. 后续可扩展方向 / Future Improvements
-- 接入真实 Google Calendar / Notion / Email API  
-  Integrate real Google Calendar / Notion / Email APIs
-- 加入用户身份与多租户隔离  
-  Add authentication and multi-tenant isolation
-- 把记忆提取升级成 LLM-based summarization  
-  Upgrade memory extraction to LLM-based summarization
-- 引入 observability、evaluation 与 replay  
-  Add observability, evaluation, and replay tooling
 # chargeflow-agent
