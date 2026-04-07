@@ -1,0 +1,29 @@
+[
+  {
+    "id": "evt-1001",
+    "title": "Weekly sync with product team",
+    "start": "2026-04-08T15:00:00+08:00",
+    "end": "2026-04-08T15:45:00+08:00",
+    "location": "Tencent Meeting",
+    "attendees": ["product@chargeflow.ai", "you@example.com"],
+    "notes": "Discuss onboarding funnel and charging dashboard iteration."
+  },
+  {
+    "id": "evt-1002",
+    "title": "1:1 with hiring mentor",
+    "start": "2026-04-09T10:30:00+08:00",
+    "end": "2026-04-09T11:00:00+08:00",
+    "location": "WeCom Call",
+    "attendees": ["mentor@example.com"],
+    "notes": "Review portfolio positioning and interview stories."
+  },
+  {
+    "id": "evt-1003",
+    "title": "Deep work block: agent prompt tuning",
+    "start": "2026-04-10T14:00:00+08:00",
+    "end": "2026-04-10T16:00:00+08:00",
+    "location": "Home office",
+    "attendees": [],
+    "notes": "No meetings preferred during this focus block."
+  }
+]

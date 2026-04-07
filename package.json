@@ -1,0 +1,29 @@
+{
+  "name": "chargeflow-agent",
+  "private": true,
+  "version": "1.0.0",
+  "description": "ChargeFlow Agent - a portfolio-ready AI agent with tool use and memory",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "install:all": "npm install --workspaces",
+    "dev": "npm run dev --workspace server",
+    "dev:client": "npm run dev --workspace client",
+    "dev:server": "npm run dev --workspace server",
+    "build": "npm run build --workspace client",
+    "start": "npm run start --workspace server"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "ai-agent",
+    "anthropic",
+    "react",
+    "express",
+    "portfolio"
+  ],
+  "license": "MIT"
+}

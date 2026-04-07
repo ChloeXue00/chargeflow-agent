@@ -1,0 +1,12 @@
+{
+  "facts": [
+    {
+      "id": "mem-1",
+      "type": "preference",
+      "content": "User usually avoids meetings on Wednesday afternoons.",
+      "source": "seed",
+      "createdAt": "2026-04-07T12:00:00.000Z"
+    }
+  ],
+  "lastUpdated": "2026-04-07T12:00:00.000Z"
+}
