@@ -40,6 +40,10 @@ npm run dev:client
 
 If `ANTHROPIC_API_KEY` is missing, the project falls back to mock mode so the demo still works.
 
+- Frontend: <http://localhost:5173>
+- Backend API: <http://localhost:3001>
+- Note: the backend is an API-only service. Visiting the root path `/` will show `Cannot GET /`, which is expected.
+
 ## Documentation
 - [PRD (CN)](./docs/PRD.md)
 - [Architecture](./docs/architecture.md)

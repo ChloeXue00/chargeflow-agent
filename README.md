@@ -96,6 +96,10 @@ npm start
 - 前端 / Frontend: <http://localhost:5173>
 - 后端 / Backend: <http://localhost:3001>
 
+说明 / Note:
+- 后端是纯 API 服务，直接访问根路径 `/` 会显示 `Cannot GET /`，这是正常现象。
+- The backend is an API-only service. Visiting the root path `/` will show `Cannot GET /`, which is expected.
+
 ---
 
 ## 6. 产品文档 / Product Documentation
