@@ -3,8 +3,8 @@
 > 基于 LLM 的个人助手 Agent，支持意图推理、工具调用、跨会话记忆。  
 > An LLM-based personal assistant agent with intent reasoning, tool calling, and cross-session memory.
 
-ChargeFlow Agent 是一个用于上传 GitHub 作为求职作品集的完整 AI Agent 项目示例。项目展示了从产品定义、Prompt Engineering、Function Calling 设计到 React + Express 原型开发的完整闭环。  
-ChargeFlow Agent is a portfolio-ready AI agent project designed for GitHub and job applications. It showcases the full journey from product definition and prompt engineering to function-calling architecture and full-stack prototyping.
+ChargeFlow Agent AI Agent 项目展示了从产品定义、Prompt Engineering、Function Calling 设计到 React + Express 原型开发的完整闭环。  
+ChargeFlow Agent showcases the full journey from product definition and prompt engineering to function-calling architecture and full-stack prototyping.
 
 ---
 
@@ -150,19 +150,7 @@ chargeflow-agent/
 └── LICENSE
 ```
 
----
 
-## 8. 面试可讲的工程决策 / Interview Talking Points
-1. 为什么设计 mock mode：保证作品集 demo 不依赖商业 API 即可跑通  
-   Why mock mode exists: to keep the portfolio demo runnable even without a paid API.
-2. 为什么把工具定义抽象成 registry：便于后续扩展更多工具  
-   Why a tool registry: it makes future tools easier to add and test.
-3. 为什么记忆系统分成 localStorage + JSON：分别负责前端体验与跨会话持久化  
-   Why memory is split between localStorage and JSON: one supports UI continuity, the other supports durable session memory.
-4. 为什么前端展示 tool trace：让面试官直接看到 Agent orchestration 能力  
-   Why visualize tool traces: reviewers can immediately see how the agent reasons through tool invocation.
-
----
 
 ## 9. 运行检查清单 / Run Checklist
 - [ ] 本地跑通前后端 / Run frontend and backend locally
