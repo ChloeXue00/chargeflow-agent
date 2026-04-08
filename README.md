@@ -74,7 +74,7 @@ flowchart LR
 
 ## 5. 快速启动 / Quick Start
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/ChloeXue00/chargeflow-agent.git
 cd chargeflow-agent
 npm install
 cp .env.example .env
