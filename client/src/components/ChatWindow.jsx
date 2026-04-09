@@ -17,14 +17,14 @@ export default function ChatWindow({ messages, loading, error, onSend, onReset }
       <div className="flex items-center justify-between border-b border-slate-700 px-6 py-4">
         <div>
           <h1 className="text-xl font-semibold text-white">ChargeFlow Agent</h1>
-          <p className="text-sm text-slate-400">LLM-powered personal assistant with tools and memory</p>
+          <p className="text-sm text-slate-400">Intelligent EV charging assistant with route & schedule awareness</p>
         </div>
         <button
           type="button"
           onClick={onReset}
           className="rounded-full border border-slate-600 px-4 py-2 text-sm text-slate-200 hover:bg-slate-800"
         >
-          Reset chat
+          Reset
         </button>
       </div>
 
@@ -32,7 +32,7 @@ export default function ChatWindow({ messages, loading, error, onSend, onReset }
         {messages.map((message) => (
           <MessageBubble key={message.id} message={message} />
         ))}
-        {loading && <div className="text-sm text-slate-400">ChargeFlow Agent is thinking…</div>}
+        {loading && <div className="text-sm text-slate-400">ChargeFlow Agent is analyzing your energy state...</div>}
         {error && <div className="rounded-2xl bg-red-500/15 px-4 py-3 text-sm text-red-200">{error}</div>}
       </div>
 
@@ -41,13 +41,13 @@ export default function ChatWindow({ messages, loading, error, onSend, onReset }
           <textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            placeholder="Try: 帮我看看明天有什么安排 / I usually avoid meetings on Wednesday afternoons"
+            placeholder="Try: 帮我看看电量够不够用 / 附近有什么充电站？/ 后天要去机场接人电量够吗？"
             className="min-h-24 flex-1 rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500"
           />
           <button
             type="submit"
             disabled={loading}
-            className="rounded-2xl bg-blue-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-400 disabled:cursor-not-allowed disabled:opacity-60"
+            className="rounded-2xl bg-emerald-500 px-5 py-3 text-sm font-semibold text-white transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Send
           </button>

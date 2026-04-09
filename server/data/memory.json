@@ -3,10 +3,24 @@
     {
       "id": "mem-1",
       "type": "preference",
-      "content": "User usually avoids meetings on Wednesday afternoons.",
+      "content": "User prefers Tesla Supercharger and NIO Power stations.",
       "source": "seed",
-      "createdAt": "2026-04-07T12:00:00.000Z"
+      "createdAt": "2026-04-06T12:00:00.000Z"
+    },
+    {
+      "id": "mem-2",
+      "type": "preference",
+      "content": "User avoids slow charging stations under 100kW.",
+      "source": "seed",
+      "createdAt": "2026-04-06T12:00:00.000Z"
+    },
+    {
+      "id": "mem-3",
+      "type": "habit",
+      "content": "User usually charges before long trips (>30km) the night before.",
+      "source": "seed",
+      "createdAt": "2026-04-06T12:00:00.000Z"
     }
   ],
-  "lastUpdated": "2026-04-07T12:00:00.000Z"
+  "lastUpdated": "2026-04-07T22:12:00.000Z"
 }

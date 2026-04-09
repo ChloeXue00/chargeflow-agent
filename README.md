@@ -1,92 +1,88 @@
 # ChargeFlow Agent
 
-> 基于 LLM 的个人助手 Agent，支持意图推理、工具调用、跨会话记忆。  
-> An LLM-based personal assistant agent with intent reasoning, tool calling, and cross-session memory.
+> 基于 LLM 的智能座舱补能决策 Agent，支持场景推理、多工具编排、跨会话记忆。  
+> An LLM-based intelligent cockpit charging agent with scenario reasoning, multi-tool orchestration, and cross-session memory.
 
-ChargeFlow Agent AI Agent 项目展示了从产品定义、Prompt Engineering、Function Calling 设计到 React + Express 原型开发的完整闭环。  
-ChargeFlow Agent showcases the full journey from product definition and prompt engineering to function-calling architecture and full-stack prototyping.
-
----
-
-## 1. 项目简介 / Project Overview
-这是一个基于 Anthropic Claude Messages API 的个人助手 Agent，支持自然语言对话、日历工具调用、知识检索和跨会话记忆。即使没有真实 API Key，项目也能在 mock mode 下完整演示核心架构。  
-This is a personal AI assistant built on the Anthropic Claude Messages API. It supports natural language chat, calendar tool calling, note retrieval, and cross-session memory. Even without a real API key, the project can still run in mock mode to demonstrate the full architecture.
+ChargeFlow Agent 不是简单的"电量低了找桩"工具，而是一个能感知**电量状态、当前任务、未来行程、跨时段记忆**的企业级座舱任务管家。项目展示了从产品场景建模、Prompt Engineering、Function Calling 设计到 React + Express 原型开发的完整闭环。
 
 ---
 
-## 2. 功能演示 / Demo Scenarios
+## 1. 核心场景 / Core Scenarios
 
-### 场景 1：查询日历 / Scenario 1: Calendar Lookup
-用户说：`帮我看看明天有什么安排`  
-User says: `Help me check what I have tomorrow.`
+### 场景 A：无目的地 — 主动补能
+用户说：`帮我看看现在电量够不够用`
 
-- Agent 识别为查询型意图 / The agent recognizes a lookup intent
-- 调用 `get_calendar_events` / Calls `get_calendar_events`
-- 返回结构化日历结果并总结重点 / Returns structured events and summarizes key items
+- Agent 获取车辆状态：SOC 18%，续航 62km
+- 无导航目的地，无紧急日程
+- 自动搜索附近充电站，按距离/功率/空闲桩位排序
+- 推荐最优站点并创建充电计划
 
-### 场景 2：创建会议 / Scenario 2: Meeting Creation
-用户说：`下周三下午3点帮我约一个和产品团队的会议`  
-User says: `Schedule a meeting with the product team next Wednesday at 3 PM.`
+### 场景 B：导航途中 — 保障当前行程
+用户说：`我正在去浦东开会，电量够吗？`
 
-- Agent 识别为创建型意图 / The agent recognizes a creation intent
-- 调用 `create_calendar_event` / Calls `create_calendar_event`
-- 创建 mock 日程并确认结果 / Creates a mock event and confirms the outcome
+- Agent 判断续航 vs 目的地距离
+- 若够用：不中断导航，提示最晚补能截止点
+- 若不够：立即推荐途中充电站
 
-### 场景 3：长期记忆 / Scenario 3: Durable Memory
-用户在多轮对话中说：`我一般周三不开会`  
-User says in a prior conversation: `I usually avoid meetings on Wednesday.`
+### 场景 C：有后续日程 — 预判未来出行
+用户说：`后天要去浦东机场接人，需要提前充电吗？`
 
-- Agent 自动提取偏好 / The agent extracts the user preference automatically
-- 存入 durable memory / Stores it in durable memory
-- 后续安排时主动提醒冲突 / Proactively warns about preference conflicts later
+- Agent 查日历：机场接机往返 ~70km，当前续航 62km
+- 计算最晚补能时间
+- 建议在空闲时段提前充电
 
-> 截图占位 / Screenshot placeholder: 后续可将运行截图放在 `docs/screenshots/` 并插入这里。  
-> You can later place screenshots under `docs/screenshots/` and embed them here.
+### 场景 D：跨会话续接 — 延续未完成任务
+用户说：`上次的充电建议还在吗？`
+
+- Agent 读取上次未执行的充电任务
+- 重新评估当前电量、站点状态
+- 展示更新后的推荐
 
 ---
 
-## 3. 技术架构图 / Architecture Diagram
+## 2. 技术架构图 / Architecture Diagram
+
 ```mermaid
 flowchart LR
-  User[User] --> UI[React UI]
+  User[Driver] --> UI[React Cockpit UI]
   UI --> API[Express API]
-  API --> Claude[Claude API tool_use]
+  API --> Claude[Claude API + Scenario Rules]
   Claude --> Tools[Tool Executor]
-  Tools --> API
+  Tools --> VEH[(Vehicle State)]
+  Tools --> STN[(Charging Stations)]
+  Tools --> CAL[(Calendar)]
+  Tools --> TASK[(Pending Tasks)]
+  API --> MEM[Memory Service]
+  MEM --> MEMFILE[(memory.json)]
   API --> UI
 ```
 
 ---
 
-## 4. 核心设计亮点 / Core Design Highlights
-- **意图推理 / Intent Reasoning**：通过 system prompt 分层设计，引导模型区分查询 / 创建 / 闲聊意图  
-  Structured prompting helps the model distinguish lookup, scheduling, and casual chat intents.
-- **Function Calling**：采用标准 `tool_use` schema，支持参数校验、错误处理和统一执行入口  
-  Standardized tool definitions support schema validation, error handling, and centralized execution.
-- **Prompt Engineering**：使用“角色定义 → 工具说明 → 记忆注入 → 输出约束”的分层 Prompt 结构  
-  The system prompt follows a layered design: role → tools → memory → constraints.
-- **记忆系统 / Memory System**：会话结束后自动提取关键事实，并存入 JSON；前端 localStorage 保留聊天历史  
-  Durable memory is stored in JSON, while localStorage keeps the client-side conversation experience consistent.
-- **工具调用可视化 / Tool Trace Visualization**：前端实时展示工具调用输入、结果和链路  
-  The UI exposes tool inputs and outputs so reviewers can directly inspect agent orchestration.
+## 3. 核心设计亮点 / Core Design Highlights
+
+- **场景决策引擎**：四大场景覆盖从"无事可做"到"正在赶路"的完整状态空间，Agent 按优先级组合调用多个工具
+- **多工具编排**：5 个工具（vehicle_status / search_stations / calendar / pending_tasks / charge_plan）通过标准 `tool_use` schema 协同工作
+- **分层 Prompt**：角色定义 → 场景规则 → 工具说明 → 记忆注入 → 输出约束，五层结构引导 LLM 做出合理决策
+- **跨会话记忆**：驾驶偏好持久化为 JSON，未完成任务自动在下次会话中恢复
+- **车辆状态仪表盘**：前端实时展示 SOC、续航、导航状态、工具调用链路
 
 ---
 
-## 5. 快速启动 / Quick Start
+## 4. 快速启动 / Quick Start
+
 ```bash
 git clone https://github.com/ChloeXue00/chargeflow-agent.git
 cd chargeflow-agent
 npm install
 cp .env.example .env
 # 在 .env 中填入 ANTHROPIC_API_KEY（可选，不填则进入 mock mode）
-# Add ANTHROPIC_API_KEY in .env (optional; without it the app falls back to mock mode)
 
 npm run dev:server
 npm run dev:client
 ```
 
-如果你想使用单一生产启动命令，也可以先 build 再启动服务端：  
-If you prefer a simple production-style flow, build first and then start the server:
+也可以先 build 再启动：
 
 ```bash
 npm run build
@@ -96,13 +92,11 @@ npm start
 - 前端 / Frontend: <http://localhost:5173>
 - 后端 / Backend: <http://localhost:3001>
 
-说明 / Note:
-- 后端是纯 API 服务，直接访问根路径 `/` 会显示 `Cannot GET /`，这是正常现象。
-- The backend is an API-only service. Visiting the root path `/` will show `Cannot GET /`, which is expected.
+说明：后端是纯 API 服务，直接访问根路径 `/` 会显示 `Cannot GET /`，这是正常现象。
 
 ---
 
-## 6. 产品文档 / Product Documentation
+## 5. 产品文档 / Product Documentation
 - [PRD](./docs/PRD.md)
 - [Architecture](./docs/architecture.md)
 - [Prompt Design](./docs/prompt-design.md)
@@ -110,7 +104,8 @@ npm start
 
 ---
 
-## 7. 项目结构 / Project Structure
+## 6. 项目结构 / Project Structure
+
 ```text
 chargeflow-agent/
 ├── README.md
@@ -126,7 +121,8 @@ chargeflow-agent/
 │   │   │   ├── ChatWindow.jsx
 │   │   │   ├── MessageBubble.jsx
 │   │   │   ├── ToolCallDisplay.jsx
-│   │   │   └── MemoryPanel.jsx
+│   │   │   ├── MemoryPanel.jsx
+│   │   │   └── VehicleStatus.jsx
 │   │   ├── hooks/
 │   │   │   └── useChat.js
 │   │   └── utils/
@@ -141,8 +137,10 @@ chargeflow-agent/
 │   │   ├── tools.js
 │   │   └── memory.js
 │   ├── data/
+│   │   ├── vehicle_state.json
+│   │   ├── charging_stations.json
 │   │   ├── calendar.json
-│   │   ├── notes.json
+│   │   ├── pending_tasks.json
 │   │   └── memory.json
 │   └── package.json
 ├── .env.example
@@ -152,4 +150,30 @@ chargeflow-agent/
 
 
 
-# chargeflow-agent
+## 7. 面试可讲的工程决策 / Interview Talking Points
+
+1. **为什么是四大场景而不是单一找桩**：覆盖了真实车主的完整补能决策链路，展示产品场景建模能力
+2. **为什么 Agent 要先查车辆状态**：所有推荐必须基于真实数据，Prompt 中明确禁止猜测
+3. **为什么需要跨会话任务续接**：真实座舱场景中用户不会一直在车里，补能决策需要跨时段延续
+4. **为什么 Prompt 分五层**：场景规则层是核心创新——让 LLM 根据车辆/导航/日程状态自动选择合适的决策路径
+5. **为什么前端展示工具调用链路**：让面试官直接看到 Agent 的多步推理过程，而不只是最终回答
+
+---
+
+## 8. 运行检查清单 / Run Checklist
+- [ ] 本地跑通前后端 / Run frontend and backend locally
+- [ ] 验证四大场景对话 / Verify all four scenario conversations
+- [ ] 检查工具调用链路可视化 / Check tool call trace display
+- [ ] 检查车辆状态仪表盘 / Check vehicle status dashboard
+- [ ] 确认 `.env` 未提交 / Make sure `.env` is not committed
+- [ ] 推送到 GitHub public repo / Push to a public GitHub repository
+
+---
+
+## 9. 后续可扩展方向 / Future Improvements
+- 接入真实地图 API（高德/百度/Google Maps）计算路径和路况
+- 接入实时充电站数据（特来电/国网/蔚来等）
+- 支持多车辆管理和家庭共享
+- 充电费用预估与比价
+- 引入 observability、evaluation 与 replay
+- 升级记忆提取为 LLM-based summarization

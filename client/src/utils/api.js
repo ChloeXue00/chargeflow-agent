@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
@@ -24,13 +24,18 @@ export const api = {
   getMemory() {
     return request('/memory');
   },
-  getEvents() {
-    return request('/calendar/events');
+  getVehicleStatus() {
+    return request('/vehicle/status');
   },
-  createEvent(payload) {
-    return request('/calendar/events', {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    });
+  getStations(params) {
+    const qs = params ? `?${new URLSearchParams(params)}` : '';
+    return request(`/stations${qs}`);
+  },
+  getEvents(params) {
+    const qs = params ? `?${new URLSearchParams(params)}` : '';
+    return request(`/calendar/events${qs}`);
+  },
+  getPendingTasks() {
+    return request('/tasks/pending');
   },
 };

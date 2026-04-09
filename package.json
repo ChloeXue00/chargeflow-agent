@@ -2,7 +2,7 @@
   "name": "chargeflow-agent",
   "private": true,
   "version": "1.0.0",
-  "description": "ChargeFlow Agent - a portfolio-ready AI agent with tool use and memory",
+  "description": "ChargeFlow Agent - intelligent EV cockpit charging agent with scenario reasoning and cross-session memory",
   "workspaces": [
     "client",
     "server"
@@ -20,6 +20,8 @@
   },
   "keywords": [
     "ai-agent",
+    "ev-charging",
+    "intelligent-cockpit",
     "anthropic",
     "react",
     "express",

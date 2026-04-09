@@ -1,0 +1,26 @@
+{
+  "vehicleId": "cf-001",
+  "model": "Model Y 2025",
+  "soc": 18,
+  "estimatedRange_km": 62,
+  "batteryCapacity_kWh": 75,
+  "currentLocation": {
+    "lat": 31.2304,
+    "lng": 121.4737,
+    "address": "Shanghai, Huangpu District, Nanjing East Road"
+  },
+  "navigation": {
+    "active": false,
+    "destination": null,
+    "destination_address": null,
+    "remainingDistance_km": null,
+    "estimatedArrival": null
+  },
+  "lastChargeCompleted": "2026-04-07T08:30:00+08:00",
+  "chargingPreferences": {
+    "preferredNetworks": ["Tesla Supercharger", "NIO Power"],
+    "minChargeLevel": 80,
+    "avoidSlowCharging": true
+  },
+  "lastUpdated": "2026-04-08T09:15:00+08:00"
+}

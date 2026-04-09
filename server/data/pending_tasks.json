@@ -1,0 +1,20 @@
+{
+  "tasks": [
+    {
+      "id": "task-001",
+      "type": "charge_recommendation",
+      "status": "pending",
+      "createdAt": "2026-04-07T22:10:00+08:00",
+      "reason": "SOC dropped below 20% threshold with no immediate schedule",
+      "recommendedStation": {
+        "id": "cs-002",
+        "name": "NIO Power Swap - People's Square",
+        "distance_km": 0.8
+      },
+      "userAction": "dismissed",
+      "dismissedAt": "2026-04-07T22:12:00+08:00",
+      "retryOnNextStart": true
+    }
+  ],
+  "lastUpdated": "2026-04-07T22:12:00+08:00"
+}

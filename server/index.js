@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import chatRouter from './routes/chat.js';
-import { getCalendarEvents, createCalendarEvent } from './services/tools.js';
+import { getVehicleStatus, searchNearbyStations, getCalendarEvents, getPendingChargeTasks } from './services/tools.js';
 import { getMemorySnapshot } from './services/memory.js';
 
 dotenv.config();
@@ -21,7 +21,31 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/chat', chatRouter);
 
 /**
- * Lightweight calendar read endpoint used by the UI and local debugging.
+ * Vehicle status endpoint for the cockpit dashboard.
+ */
+app.get('/api/vehicle/status', async (_req, res) => {
+  try {
+    const status = await getVehicleStatus();
+    res.json(status);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to load vehicle status.' });
+  }
+});
+
+/**
+ * Charging station search endpoint.
+ */
+app.get('/api/stations', async (req, res) => {
+  try {
+    const stations = await searchNearbyStations(req.query);
+    res.json({ stations });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to search stations.' });
+  }
+});
+
+/**
+ * Calendar events endpoint for trip planning.
  */
 app.get('/api/calendar/events', async (req, res) => {
   try {
@@ -33,20 +57,19 @@ app.get('/api/calendar/events', async (req, res) => {
 });
 
 /**
- * Mock event creation endpoint.
- * Mirrors the interface shape of a real scheduling integration.
+ * Pending charge tasks endpoint.
  */
-app.post('/api/calendar/events', async (req, res) => {
+app.get('/api/tasks/pending', async (_req, res) => {
   try {
-    const event = await createCalendarEvent(req.body);
-    res.status(201).json({ event });
+    const tasks = await getPendingChargeTasks();
+    res.json({ tasks });
   } catch (error) {
-    res.status(400).json({ error: error.message || 'Failed to create calendar event.' });
+    res.status(500).json({ error: 'Failed to load pending tasks.' });
   }
 });
 
 /**
- * Durable memory inspection endpoint for the right-hand memory panel.
+ * Durable memory inspection endpoint.
  */
 app.get('/api/memory', async (_req, res) => {
   try {

@@ -7,7 +7,7 @@ const starterMessages = [
   {
     id: 'welcome',
     role: 'assistant',
-    content: 'Hi, I am ChargeFlow Agent. Ask about your schedule, create a mock calendar event, or let me remember a preference.',
+    content: '你好，我是 ChargeFlow Agent，你的智能座舱补能助手。我会根据电量、行程和日程，为你主动规划最佳充电方案。试试问我：「现在电量够不够用？」',
   },
 ];
 
