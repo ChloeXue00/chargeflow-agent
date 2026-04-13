@@ -3,7 +3,7 @@
 > 基于 LLM 的智能座舱补能决策 Agent，支持场景推理、多工具编排、跨会话记忆。  
 > An LLM-based intelligent cockpit charging agent with scenario reasoning, multi-tool orchestration, and cross-session memory.
 
-ChargeFlow Agent 不是简单的"电量低了找桩"工具，而是一个能感知**电量状态、当前任务、未来行程、跨时段记忆**的企业级座舱任务管家。项目展示了从产品场景建模、Prompt Engineering、Function Calling 设计到 React + Express 原型开发的完整闭环。
+ChargeFlow Agent 基于"找到附近最快能充上电并监控车辆电量"的电量管理app，升级为一个能感知**电量状态、当前任务、未来行程、跨时段记忆**的企业级座舱任务管家。项目展示了从产品场景建模、Prompt Engineering、Function Calling 设计到 React + Express 原型开发的完整闭环。
 
 ---
 
@@ -149,31 +149,3 @@ chargeflow-agent/
 ```
 
 
-
-## 7. 面试可讲的工程决策 / Interview Talking Points
-
-1. **为什么是四大场景而不是单一找桩**：覆盖了真实车主的完整补能决策链路，展示产品场景建模能力
-2. **为什么 Agent 要先查车辆状态**：所有推荐必须基于真实数据，Prompt 中明确禁止猜测
-3. **为什么需要跨会话任务续接**：真实座舱场景中用户不会一直在车里，补能决策需要跨时段延续
-4. **为什么 Prompt 分五层**：场景规则层是核心创新——让 LLM 根据车辆/导航/日程状态自动选择合适的决策路径
-5. **为什么前端展示工具调用链路**：让面试官直接看到 Agent 的多步推理过程，而不只是最终回答
-
----
-
-## 8. 运行检查清单 / Run Checklist
-- [ ] 本地跑通前后端 / Run frontend and backend locally
-- [ ] 验证四大场景对话 / Verify all four scenario conversations
-- [ ] 检查工具调用链路可视化 / Check tool call trace display
-- [ ] 检查车辆状态仪表盘 / Check vehicle status dashboard
-- [ ] 确认 `.env` 未提交 / Make sure `.env` is not committed
-- [ ] 推送到 GitHub public repo / Push to a public GitHub repository
-
----
-
-## 9. 后续可扩展方向 / Future Improvements
-- 接入真实地图 API（高德/百度/Google Maps）计算路径和路况
-- 接入实时充电站数据（特来电/国网/蔚来等）
-- 支持多车辆管理和家庭共享
-- 充电费用预估与比价
-- 引入 observability、evaluation 与 replay
-- 升级记忆提取为 LLM-based summarization
