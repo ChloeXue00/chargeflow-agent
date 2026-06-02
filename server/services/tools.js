@@ -24,8 +24,9 @@ let pendingState = structuredClone(pendingSeed);
 const vehicleStatusSchema = z.object({}).optional();
 
 const searchStationsSchema = z.object({
-  maxDistance_km: z.number().optional().default(10),
-  minPower_kW: z.number().optional().default(0),
+  // coerce so HTTP query strings ("5") and agent tool numbers (5) both parse
+  maxDistance_km: z.coerce.number().optional().default(10),
+  minPower_kW: z.coerce.number().optional().default(0),
   network: z.string().optional(),
   sortBy: z.enum(['distance', 'speed', 'price', 'availability']).optional().default('distance'),
 });
