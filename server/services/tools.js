@@ -3,14 +3,21 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { z } from 'zod';
 
+// Static seed data is imported (so it gets bundled into the serverless function);
+// fs reads of un-imported files would 404 on Vercel.
+import vehicleState from '../data/vehicle_state.json' with { type: 'json' };
+import stationsData from '../data/charging_stations.json' with { type: 'json' };
+import calendarData from '../data/calendar.json' with { type: 'json' };
+import pendingSeed from '../data/pending_tasks.json' with { type: 'json' };
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const dataDir = path.join(__dirname, '..', 'data');
+const pendingTasksPath = path.join(__dirname, '..', 'data', 'pending_tasks.json');
 
-const vehiclePath = path.join(dataDir, 'vehicle_state.json');
-const stationsPath = path.join(dataDir, 'charging_stations.json');
-const calendarPath = path.join(dataDir, 'calendar.json');
-const pendingTasksPath = path.join(dataDir, 'pending_tasks.json');
+// Vercel's filesystem is read-only, so the one mutable doc (pending tasks) lives
+// in memory (per warm instance). Locally we persist to disk for a nicer dev loop.
+const canPersist = !process.env.VERCEL;
+let pendingState = structuredClone(pendingSeed);
 
 // --- Schemas ---
 
@@ -41,13 +48,26 @@ const pendingTasksSchema = z.object({}).optional();
 
 // --- Helpers ---
 
-async function readJson(filePath) {
-  const raw = await fs.readFile(filePath, 'utf-8');
-  return JSON.parse(raw);
+async function readPending() {
+  if (canPersist) {
+    try {
+      return JSON.parse(await fs.readFile(pendingTasksPath, 'utf-8'));
+    } catch {
+      // fall back to in-memory state if the file is unavailable
+    }
+  }
+  return pendingState;
 }
 
-async function writeJson(filePath, data) {
-  await fs.writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+async function writePending(data) {
+  pendingState = data;
+  if (canPersist) {
+    try {
+      await fs.writeFile(pendingTasksPath, JSON.stringify(data, null, 2), 'utf-8');
+    } catch {
+      // read-only FS (e.g. Vercel) — keep the in-memory copy only
+    }
+  }
 }
 
 // --- Tool Implementations ---
@@ -56,7 +76,7 @@ async function writeJson(filePath, data) {
  * Get current vehicle status: SOC, range, location, navigation state.
  */
 export async function getVehicleStatus() {
-  return readJson(vehiclePath);
+  return structuredClone(vehicleState);
 }
 
 /**
@@ -64,7 +84,7 @@ export async function getVehicleStatus() {
  */
 export async function searchNearbyStations(input = {}) {
   const { maxDistance_km, minPower_kW, network, sortBy } = searchStationsSchema.parse(input);
-  const stations = await readJson(stationsPath);
+  const stations = stationsData;
 
   const filtered = stations.filter((s) => {
     if (s.distance_km > maxDistance_km) return false;
@@ -88,7 +108,7 @@ export async function searchNearbyStations(input = {}) {
  */
 export async function getCalendarEvents(input = {}) {
   const { date, rangeStart, rangeEnd, keyword } = calendarQuerySchema.parse(input);
-  const events = await readJson(calendarPath);
+  const events = calendarData;
 
   return events.filter((event) => {
     const start = new Date(event.start).getTime();
@@ -107,7 +127,7 @@ export async function getCalendarEvents(input = {}) {
  * Get unfinished charging tasks from previous sessions.
  */
 export async function getPendingChargeTasks() {
-  const data = await readJson(pendingTasksPath);
+  const data = await readPending();
   return data.tasks.filter((t) => t.status === 'pending');
 }
 
@@ -116,8 +136,7 @@ export async function getPendingChargeTasks() {
  */
 export async function createChargePlan(input) {
   const parsed = chargePlanSchema.parse(input);
-  const stations = await readJson(stationsPath);
-  const station = stations.find((s) => s.id === parsed.stationId);
+  const station = stationsData.find((s) => s.id === parsed.stationId);
 
   if (!station) throw new Error(`Station ${parsed.stationId} not found.`);
 
@@ -140,10 +159,10 @@ export async function createChargePlan(input) {
     retryOnNextStart: true,
   };
 
-  const data = await readJson(pendingTasksPath);
+  const data = await readPending();
   data.tasks.push(task);
   data.lastUpdated = new Date().toISOString();
-  await writeJson(pendingTasksPath, data);
+  await writePending(data);
 
   return task;
 }

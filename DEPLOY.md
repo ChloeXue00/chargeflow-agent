@@ -1,90 +1,83 @@
 # 🚀 部署指南 / Deploy Guide
 
-架构:**前端 (React/Vite) → Vercel** · **后端 (Express) → Render** · **真实 Claude API**。
-全程约 15 分钟,均使用免费额度。两个平台都用 GitHub 登录即可。
+**全栈部署到 Vercel** —— 前端(静态) + 后端(Serverless Functions)在**同一个项目、同一个域名**。
+免费、**不用绑信用卡**、一次部署、无 CORS 问题。约 8 分钟。
 
 ```
-┌─────────────┐   HTTPS    ┌──────────────────┐   Anthropic SDK   ┌────────────┐
-│  Vercel     │──────────▶ │  Render          │ ───────────────▶  │  Claude    │
-│  (frontend) │            │  (Express API)   │                   │  API       │
-└─────────────┘            └──────────────────┘                   └────────────┘
-   VITE_API_BASE              ANTHROPIC_API_KEY
-                              CLIENT_ORIGIN (CORS)
+            ┌──────────────────────────────────────────┐
+   浏览器 ──▶│  Vercel 项目 (chargeflow-agent)            │
+            │  ├─ 静态前端  client/dist  →  /  和  /m    │
+            │  └─ Serverless API  api/[...path].mjs → /api/* │──▶ Claude API
+            └──────────────────────────────────────────┘
+                         ANTHROPIC_API_KEY (env)
 ```
 
-> ⚠️ 顺序很重要:**先部署后端拿到 URL → 再部署前端 → 最后回填 CORS**。
+> 后端是 Express 应用,通过 `api/[...path].mjs` 以 Serverless Function 形式运行。
+> 注意:serverless 文件系统只读,**记忆/待办为按实例的临时状态**(冷启动重置)——对 demo / 内测足够。
 
 ---
 
-## ① 后端 → Render
+## ① 准备
 
-1. 打开 <https://dashboard.render.com> → 用 GitHub 登录。
-2. **New → Blueprint** → 选择 `ChloeXue00/chargeflow-agent` 仓库。
-   Render 会自动读取仓库根目录的 [`render.yaml`](./render.yaml),识别出 `chargeflow-agent-api` 服务。
-3. 点 **Apply**。它会提示你填两个标记为 `sync: false` 的密钥:
-   | Key | Value |
-   | --- | --- |
-   | `ANTHROPIC_API_KEY` | 你的真实 key(`sk-ant-...`) |
-   | `CLIENT_ORIGIN` | 先随便填 `http://localhost:5173`,第 ③ 步再回来改 |
-4. 等待 build 完成。拿到后端地址,形如 `https://chargeflow-agent-api.onrender.com`。
-5. 验证:浏览器打开 `https://你的后端.onrender.com/api/health`,应返回
-   `{"ok":true,"service":"chargeflow-agent-server"}`。
-
-> 💤 免费版闲置 15 分钟会休眠,首次访问冷启动约 30–50 秒。这是免费档的正常表现。
+- 一个 **Anthropic API key**(<https://console.anthropic.com> → API Keys,形如 `sk-ant-...`)
+- 一个 GitHub 账号(仓库已就绪)
 
 ---
 
-## ② 前端 → Vercel
+## ② 部署到 Vercel
 
-1. 打开 <https://vercel.com/new> → 用 GitHub 登录 → 导入 `chargeflow-agent` 仓库。
-2. **Root Directory** 选择 `client`(关键!点 Edit 选 client 目录)。
-   Vercel 会自动识别 Vite,build 命令与输出目录由 [`client/vercel.json`](./client/vercel.json) 提供。
+1. 打开 <https://vercel.com/new> → 用 **GitHub 登录** → 导入 `ChloeXue00/chargeflow-agent`
+2. **Root Directory** 保持 **仓库根目录**(不要选 `client`!根目录的 `vercel.json` 会自动构建前端 + 部署 API 函数)
 3. 展开 **Environment Variables**,添加:
    | Name | Value |
    | --- | --- |
-   | `VITE_API_BASE` | `https://你的后端.onrender.com/api` （注意结尾的 `/api`,无尾斜杠) |
-4. 点 **Deploy**。完成后拿到前端地址,形如 `https://chargeflow-agent.vercel.app`。
+   | `ANTHROPIC_API_KEY` | 你的真实 key `sk-ant-...` |
+   | `ANTHROPIC_MODEL` | `claude-sonnet-4-6`(可选) |
+4. 点 **Deploy**,等待构建完成
+
+构建做了三件事(由根 `vercel.json` 驱动):`npm install` → `npm run build --workspace client` → 把 `api/` 目录部署为 Serverless Functions。
 
 ---
 
-## ③ 回填 CORS(让前端能访问后端)
+## ③ 验证
 
-1. 回到 Render → 你的服务 → **Environment** → 把 `CLIENT_ORIGIN` 改成你的 Vercel 域名:
-   ```
-   https://chargeflow-agent.vercel.app
-   ```
-   (无尾斜杠;如有多个域名用逗号分隔)
-2. 保存 → Render 自动 redeploy。
-3. 打开 Vercel 前端地址,问一句「帮我看看现在电量够不够用」,能看到真实 Claude 回复 + 工具调用链路即成功 ✅。
+部署完成后拿到地址,形如 `https://chargeflow-agent.vercel.app`:
 
----
+- **车机座舱版**:`https://你的域名.vercel.app/`
+- **移动小程序版**:`https://你的域名.vercel.app/m`
+- **后端健康检查**:`https://你的域名.vercel.app/api/health` → 应返回 `{"ok":true,...}`
 
-## ④ 收尾(可选但推荐)
-
-- 把 [`README.md`](./README.md) 顶部两处 `chargeflow-agent.vercel.app` 替换为你的真实域名。
-- 在 GitHub 仓库 **About** 区(右上齿轮)填入:
-  - **Website**: 你的 Vercel 地址
-  - **Description**: `LLM-powered intelligent EV cockpit agent — function calling, multi-tool orchestration & cross-session memory`
-  - **Topics**: `ai-agent` `llm` `anthropic` `function-calling` `react` `ev-charging`
+在页面问一句「帮我看看现在电量够不够用」,能看到真实 Claude 回复 + 工具调用链路即成功 ✅。
 
 ---
 
-## ④.5 移动端内测 / Mobile Beta（可选）
+## ④ 收尾(推荐)
 
-部署后,移动小程序版在 **`https://你的域名.vercel.app/m`**(注意 `/m`)。
+- 把 [`README.md`](./README.md) / [`README_EN.md`](./README_EN.md) 顶部的 `chargeflow-agent.vercel.app` 占位换成你的真实域名。
+- GitHub 仓库 **About**(右上齿轮):填 **Website** = Vercel 地址;**Topics** = `ai-agent` `llm` `anthropic` `function-calling` `react` `pwa`。
 
-1. **生成二维码**:把 `/m` 地址丢进任意二维码生成器(或 `npx qrcode "https://你的域名.vercel.app/m"`),贴到朋友圈 / 内测群,扫码即用、可"添加到主屏幕"当 App(已配 PWA)。
-2. **看内测数据**:前端已接入 **Vercel Web Analytics**。到 Vercel 项目 → **Analytics** 标签 → 开启即可看 PV / 访客;代码里还埋了自定义事件 **`agent_message`**(带 `surface: mobile | cockpit`),用来量化"到底有多少人真的在跟 Agent 对话"——这是验证需求最直接的信号。
-3. 想要更强的留存/转化分析,可再接 PostHog / Plausible(非必需)。
+---
+
+## ⑤ 移动端内测 / Mobile Beta
+
+- 移动端在 **`/m`**;已配 PWA,手机上可"添加到主屏幕"当 App 用。
+- **二维码**:`npx qrcode "https://你的域名.vercel.app/m"`(或任意二维码工具),贴到内测群/朋友圈扫码即用。
+- **看数据**:已接入 **Vercel Web Analytics** —— 到 Vercel 项目 → **Analytics** 标签开启,即可看 PV / 访客;代码里还埋了自定义事件 **`agent_message`**(带 `surface: mobile | cockpit`),直接量化"多少人真的在跟 Agent 对话"。
 
 ---
 
 ## 成本与安全 / Cost & Safety
 
-- 后端已内置 `/api/chat` **限流**(默认 60s/IP 最多 20 次,可用 `RATE_LIMIT_MAX` 调整)、请求体上限 256KB、对话长度上限,防止 key 被刷量。
-- **Prompt caching** 让静态 system prompt 命中缓存,显著降低每次调用的输入成本。
-- 想进一步控制开销:在 Render 把 `RATE_LIMIT_MAX` 调小,或在 [Anthropic Console](https://console.anthropic.com) 给 key 设置每月消费上限。
-- 临时想要"零成本只读演示":在 Render 把 `ANTHROPIC_API_KEY` 删除或加一个 `MOCK_MODE=true`,即切回 mock 模式。
+- `/api/chat` 已内置**限流**(默认 60s/IP 最多 20 次,环境变量 `RATE_LIMIT_MAX` 可调)、请求体上限 256KB、对话长度上限,防止 key 被刷量。
+- **Prompt caching**:静态 system prompt 命中缓存,显著降低每次调用输入成本。
+- 想进一步控成本:在 Vercel 调小 `RATE_LIMIT_MAX`,或在 [Anthropic Console](https://console.anthropic.com) 给 key 设每月消费上限。
+- 想要"零成本只读演示":在 Vercel 删除 `ANTHROPIC_API_KEY` 或加 `MOCK_MODE=true`,即切回 mock 模式。
+
+---
+
+## 函数超时 / Function Timeout
+
+Agent 一次对话可能要 10–20 秒(两次 Claude 调用 + 工具执行)。根 `vercel.json` 已把 `api/**` 的 `maxDuration` 设为 **60s**。若 Hobby 套餐对时长有限制导致部署告警,可下调到 `30`。
 
 ---
 
@@ -92,8 +85,9 @@
 
 | 现象 | 原因 / 解决 |
 | --- | --- |
-| 前端报 CORS 错误 | `CLIENT_ORIGIN` 没填对(要和浏览器地址栏完全一致、无尾斜杠),改完等 Render redeploy |
-| 前端能开但发消息 500 | 后端 `ANTHROPIC_API_KEY` 没设或无效;看 Render 日志 |
-| 首次访问很慢 | Render 免费版冷启动,属正常 |
-| 访问后端根路径显示 `Cannot GET /` | 正常,后端是纯 API,健康检查走 `/api/health` |
+| Root Directory 选错成 `client` | API 函数不会部署 → `/api/*` 404。改回**仓库根目录**重新部署 |
+| `/api/health` 404 | 同上,或 `api/` 未被识别;确认 Root Directory = 根目录 |
+| 发消息 500 | `ANTHROPIC_API_KEY` 没设或无效;看 Vercel → Deployments → Functions 日志 |
+| 发消息一直转圈后超时 | 函数超时;确认 `vercel.json` 的 `maxDuration`,或先用 mock 模式 |
 | 发消息返回 429 | 触发限流,稍等或调高 `RATE_LIMIT_MAX` |
+| 记忆/待办刷新后没了 | 正常:serverless 文件系统只读,记忆是按实例临时状态 |

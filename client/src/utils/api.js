@@ -1,4 +1,10 @@
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3001/api';
+// Local dev runs the API on :3001; in production the API is same-origin (/api),
+// served by Vercel serverless functions alongside the static frontend.
+const API_BASE =
+  import.meta.env.VITE_API_BASE ||
+  (typeof location !== 'undefined' && location.hostname === 'localhost'
+    ? 'http://localhost:3001/api'
+    : '/api');
 
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {

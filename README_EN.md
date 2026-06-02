@@ -128,7 +128,7 @@ npm run dev:client               # frontend → http://localhost:5173
 
 > 💡 **Works without an API key**: if `ANTHROPIC_API_KEY` is missing, the agent runs in **mock mode** — the full UI, tool-call trace, and memory panel all work. Add a key to switch to real Claude reasoning.
 
-One-click cloud deploy 👉 [`DEPLOY.md`](./DEPLOY.md) (Vercel frontend + Render backend).
+One-click cloud deploy 👉 [`DEPLOY.md`](./DEPLOY.md) — **full-stack on Vercel** (static frontend + serverless API in one project, no credit card).
 
 ---
 

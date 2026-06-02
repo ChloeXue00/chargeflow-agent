@@ -31,5 +31,10 @@ jobs:
       - name: Build client
         run: npm run build --workspace client
 
-      - name: Type-check server entrypoint
-        run: node --check server/index.js
+      - name: Syntax-check server + serverless entrypoints
+        run: |
+          node --check server/index.js
+          node --check server/app.js
+          node --check server/services/tools.js
+          node --check server/services/memory.js
+          node --check "api/[...path].mjs"

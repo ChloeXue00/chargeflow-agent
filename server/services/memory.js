@@ -2,17 +2,38 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+// Seed memory is imported so it is bundled into the serverless function.
+import seedMemory from '../data/memory.json' with { type: 'json' };
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const memoryPath = path.join(__dirname, '..', 'data', 'memory.json');
 
+// Vercel's filesystem is read-only, so memory lives in module state there (per
+// warm instance). Locally we persist to disk so memory survives restarts.
+const canPersist = !process.env.VERCEL;
+let memoryState = structuredClone(seedMemory);
+
 async function readMemoryFile() {
-  const raw = await fs.readFile(memoryPath, 'utf-8');
-  return JSON.parse(raw);
+  if (canPersist) {
+    try {
+      return JSON.parse(await fs.readFile(memoryPath, 'utf-8'));
+    } catch {
+      // fall back to in-memory state
+    }
+  }
+  return memoryState;
 }
 
 async function writeMemoryFile(data) {
-  await fs.writeFile(memoryPath, JSON.stringify(data, null, 2), 'utf-8');
+  memoryState = data;
+  if (canPersist) {
+    try {
+      await fs.writeFile(memoryPath, JSON.stringify(data, null, 2), 'utf-8');
+    } catch {
+      // read-only FS (e.g. Vercel) — keep the in-memory copy only
+    }
+  }
 }
 
 export async function getMemorySnapshot() {

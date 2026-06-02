@@ -131,7 +131,7 @@ npm run dev:client               # 前端  → http://localhost:5173
 
 > 💡 **无需 API key 也能完整演示**:未配置 `ANTHROPIC_API_KEY` 时,Agent 自动进入 **mock 模式**,UI、工具调用链路与记忆面板全部可用。填入 key 即切换到真实 Claude 推理。
 
-线上一键部署见 👉 [`DEPLOY.md`](./DEPLOY.md)(Vercel 前端 + Render 后端)。
+线上一键部署见 👉 [`DEPLOY.md`](./DEPLOY.md) —— **全栈上 Vercel**(前端 + Serverless API 同项目同域,免绑卡)。
 
 ---
 
@@ -157,9 +157,9 @@ chargeflow-agent/
 │   │   ├── tools.js             # 5 个工具的 schema 与执行器
 │   │   └── memory.js            # 跨会话记忆抽取与持久化
 │   └── data/                    # 车况 / 充电站 / 日历 / 任务 / 记忆 (mock 数据)
+├── api/[...path].mjs            # Vercel Serverless 入口 (包装 Express app)
 ├── docs/                        # PRD · architecture · prompt-design · DESIGN · figma · screenshots
-├── render.yaml                  # Render 后端部署蓝图
-├── client/vercel.json           # Vercel 前端部署配置
+├── vercel.json                  # 全栈部署 (静态前端 + Serverless API)
 └── .github/workflows/ci.yml     # CI: lint + build (Node 20/22)
 ```
 
