@@ -4,9 +4,10 @@
   "buildCommand": "npm run build --workspace client",
   "outputDirectory": "client/dist",
   "functions": {
-    "api/**": { "maxDuration": 60 }
+    "api/index.mjs": { "maxDuration": 60 }
   },
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index?__path=/api/$1" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

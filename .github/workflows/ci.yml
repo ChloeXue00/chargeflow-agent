@@ -37,4 +37,4 @@ jobs:
           node --check server/app.js
           node --check server/services/tools.js
           node --check server/services/memory.js
-          node --check "api/[...path].mjs"
+          node --check api/index.mjs
