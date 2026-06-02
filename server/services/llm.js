@@ -3,14 +3,18 @@ import { anthropicTools, executeTool } from './tools.js';
 import { extractMemoryCandidates, formatMemoryForPrompt, getMemorySnapshot, persistMemory } from './memory.js';
 
 const apiKey = process.env.ANTHROPIC_API_KEY;
-const model = process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022';
+const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-4-6';
 const anthropic = apiKey ? new Anthropic({ apiKey }) : null;
 
 /**
- * Layered system prompt for the intelligent cockpit charging agent.
- * Structure: role -> scenario rules -> tools -> memory -> constraints.
+ * Static, layered system prompt for the intelligent cockpit charging agent.
+ * Structure: role -> scenario rules -> tools -> constraints.
+ *
+ * This text never changes between turns, so it is sent as a cached system block
+ * (see runAgentTurn). Per-driver memory is injected as a separate, uncached block
+ * so the large static prefix stays a stable prompt-cache hit (~90% input cost cut).
  */
-function buildSystemPrompt(memoryText) {
+function buildSystemPrompt() {
   return `You are ChargeFlow Agent, an intelligent EV cockpit assistant that proactively manages charging decisions for the driver.
 
 Role layer:
@@ -49,8 +53,7 @@ Tool layer:
 - NEVER guess battery levels, station availability, or distances — always use tools.
 
 Memory layer:
-- Use these remembered facts about the driver when making recommendations:
-${memoryText}
+- Remembered facts about this driver are provided in a separate system block. Use them when making recommendations.
 
 Constraint layer:
 - Always state the current SOC and estimated range when discussing charging.
@@ -142,9 +145,29 @@ function createMockResponse(messages, memory) {
  * 3. Execute tool_use blocks if present (supports multi-step tool chains)
  * 4. Return final answer + tool trace + updated memory
  */
+/**
+ * Builds the system blocks for a turn.
+ * - Block 1: the large static prompt, marked with cache_control so Claude
+ *   reuses the cached prefix on every turn (90% cheaper input, lower latency).
+ * - Block 2: the per-driver memory snapshot, left uncached because it changes.
+ */
+function buildSystemBlocks(memory) {
+  return [
+    {
+      type: 'text',
+      text: buildSystemPrompt(),
+      cache_control: { type: 'ephemeral' },
+    },
+    {
+      type: 'text',
+      text: `Remembered facts about this driver:\n${formatMemoryForPrompt(memory)}`,
+    },
+  ];
+}
+
 export async function runAgentTurn(messages) {
   const memory = await getMemorySnapshot();
-  const systemPrompt = buildSystemPrompt(formatMemoryForPrompt(memory));
+  const system = buildSystemBlocks(memory);
 
   if (!anthropic || process.env.MOCK_MODE === 'true') {
     const mock = createMockResponse(messages, memory);
@@ -155,7 +178,7 @@ export async function runAgentTurn(messages) {
   const initial = await anthropic.messages.create({
     model,
     max_tokens: 1024,
-    system: systemPrompt,
+    system,
     tools: anthropicTools,
     messages: toAnthropicMessages(messages),
   });
@@ -191,7 +214,7 @@ export async function runAgentTurn(messages) {
     ? await anthropic.messages.create({
         model,
         max_tokens: 1024,
-        system: systemPrompt,
+        system,
         tools: anthropicTools,
         messages: followUpMessages,
       })

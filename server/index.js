@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import chatRouter from './routes/chat.js';
+import { rateLimit } from './middleware/rateLimit.js';
 import { getVehicleStatus, searchNearbyStations, getCalendarEvents, getPendingChargeTasks } from './services/tools.js';
 import { getMemorySnapshot } from './services/memory.js';
 
@@ -9,16 +10,30 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
 
-app.use(cors({ origin: CLIENT_ORIGIN, credentials: true }));
-app.use(express.json());
+// Comma-separated list of allowed origins (e.g. local Vite + the Vercel domain).
+const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+const allowedOrigins = CLIENT_ORIGIN.split(',').map((origin) => origin.trim()).filter(Boolean);
+
+// Render runs the app behind a proxy, so trust X-Forwarded-* for correct client IPs.
+app.set('trust proxy', 1);
+
+app.use(cors({
+  origin(origin, callback) {
+    // Allow same-origin / non-browser clients (no Origin header) and any allowlisted origin.
+    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error(`Origin ${origin} not allowed by CORS`));
+  },
+  credentials: true,
+}));
+app.use(express.json({ limit: '256kb' }));
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'chargeflow-agent-server' });
 });
 
-app.use('/api/chat', chatRouter);
+// The chat endpoint hits the Anthropic API, so it is rate limited to protect cost.
+app.use('/api/chat', rateLimit(), chatRouter);
 
 /**
  * Vehicle status endpoint for the cockpit dashboard.

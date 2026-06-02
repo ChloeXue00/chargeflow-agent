@@ -1,52 +1,82 @@
-# ChargeFlow Agent
+<div align="center">
 
-> 基于 LLM 的智能座舱补能决策 Agent，支持场景推理、多工具编排、跨会话记忆。  
-> An LLM-based intelligent cockpit charging agent with scenario reasoning, multi-tool orchestration, and cross-session memory.
+# ⚡ ChargeFlow Agent
 
-ChargeFlow Agent 基于"找到附近最快能充上电并监控车辆电量"的电量管理app，升级为一个能感知**电量状态、当前任务、未来行程、跨时段记忆**的企业级座舱任务管家。项目展示了从产品场景建模、Prompt Engineering、Function Calling 设计到 React + Express 原型开发的完整闭环。
+**基于 LLM 的智能座舱补能决策 Agent —— 场景推理 · 多工具编排 · 跨会话记忆**
+_An LLM-powered intelligent EV cockpit agent: scenario reasoning, multi-tool orchestration & cross-session memory._
+
+[![CI](https://github.com/ChloeXue00/chargeflow-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/ChloeXue00/chargeflow-agent/actions/workflows/ci.yml)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-online-brightgreen)](https://chargeflow-agent.vercel.app)
+![React](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
+![Node](https://img.shields.io/badge/Node-%E2%89%A518-339933?logo=node.js&logoColor=white)
+![Claude](https://img.shields.io/badge/Claude-Function%20Calling-d97757)
+![License](https://img.shields.io/badge/License-MIT-blue)
+
+🔗 **Live Demo:** https://chargeflow-agent.vercel.app · 📄 [PRD](./docs/PRD.md) · 🏗️ [Architecture](./docs/architecture.md) · 🧠 [Prompt Design](./docs/prompt-design.md) · 🇬🇧 [English](./README_EN.md)
+
+</div>
+
+> _部署后请把上方两处 `chargeflow-agent.vercel.app` 替换为你的真实 Vercel 域名。_
+
+ChargeFlow Agent 把一个"找附近充电站"的工具型 app，升级为能感知 **电量状态、当前任务、未来行程、跨时段记忆** 的企业级座舱任务管家。它展示了一个 AI Agent 的完整工程闭环:**产品场景建模 → 分层 Prompt Engineering → Anthropic Function Calling → 多工具编排 → 持久化记忆 → React 可视化前端**。
+
+![ChargeFlow Agent cockpit](./docs/screenshots/03-scenario-stations.png)
+
+> 界面同时呈现了驾驶者最关心的四件事:**车辆状态仪表盘**、**对话式补能助手**、**工具调用链路(决策可解释)**、**跨会话记忆**。
 
 ---
 
-## 1. 核心场景 / Core Scenarios
+## ✨ 工程亮点 / Engineering Highlights
+
+| 能力 | 实现 |
+| --- | --- |
+| **真实 Function Calling** | 基于 `@anthropic-ai/sdk` 的标准 `tool_use` 协议,支持**多步工具链**(获取车况 → 搜站 → 查日历 → 生成计划)的 agent loop |
+| **场景决策引擎** | 4 大场景覆盖从"无事可做"到"正在赶路"的完整状态空间,按**优先级(安全优先)**组合调用工具 |
+| **分层 System Prompt** | 角色 → 场景规则 → 工具 → 记忆 → 输出约束,五层结构引导稳定决策 |
+| **Prompt Caching** | 静态 system prompt 通过 `cache_control` 缓存,记忆作为独立块注入,使大前缀稳定命中缓存,**输入成本降低 ~90%、首字延迟更低** |
+| **跨会话记忆** | 驾驶偏好与未完成任务持久化为 JSON,下次会话自动恢复并重新评估 |
+| **可安全公开部署** | `/api/chat` 加滑动窗口**限流**、请求体积与对话长度上限,保护真实 API key 不被刷量 |
+| **CI** | GitHub Actions 在 Node 18/20/22 矩阵上 lint + build,徽章实时反映健康度 |
+
+---
+
+## 🎬 核心场景 / Core Scenarios
 
 ### 场景 A：无目的地 — 主动补能
-用户说：`帮我看看现在电量够不够用`
+> 用户:`帮我看看现在电量够不够用`
 
-- Agent 获取车辆状态：SOC 18%，续航 62km
-- 无导航目的地，无紧急日程
-- 自动搜索附近充电站，按距离/功率/空闲桩位排序
-- 推荐最优站点并创建充电计划
+Agent 获取车辆状态(SOC 18% / 续航 62km)→ 判断无导航无日程 → 搜索附近充电站并按距离/功率/空闲桩排序 → 推荐最优站点。
+
+![Scenario A](./docs/screenshots/02-scenario-a-battery.png)
 
 ### 场景 B：导航途中 — 保障当前行程
-用户说：`我正在去浦东开会，电量够吗？`
+> 用户:`我正在去浦东开会，电量够吗？`
 
-- Agent 判断续航 vs 目的地距离
-- 若够用：不中断导航，提示最晚补能截止点
-- 若不够：立即推荐途中充电站
+判断续航 vs 目的地距离:够用则不打断导航、只给出最晚补能截止点;不够则立即推荐途中充电站。
 
 ### 场景 C：有后续日程 — 预判未来出行
-用户说：`后天要去浦东机场接人，需要提前充电吗？`
+> 用户:`后天要去浦东机场接人，电量够吗？`
 
-- Agent 查日历：机场接机往返 ~70km，当前续航 62km
-- 计算最晚补能时间
-- 建议在空闲时段提前充电
+读取日历(机场往返 ~70km vs 当前续航 62km)→ 计算最晚补能时间 → 建议在空闲时段提前充电。
+
+![Scenario C](./docs/screenshots/04-scenario-c-calendar.png)
 
 ### 场景 D：跨会话续接 — 延续未完成任务
-用户说：`上次的充电建议还在吗？`
+> 用户:`上次的充电建议还在吗？`
 
-- Agent 读取上次未执行的充电任务
-- 重新评估当前电量、站点状态
-- 展示更新后的推荐
+读取上次未执行的充电任务 → 重新评估当前电量与站点状态 → 展示更新后的推荐。
+
+![Scenario D](./docs/screenshots/05-scenario-d-pending.png)
 
 ---
 
-## 2. 技术架构图 / Architecture Diagram
+## 🏗️ 技术架构 / Architecture
 
 ```mermaid
 flowchart LR
   User[Driver] --> UI[React Cockpit UI]
-  UI --> API[Express API]
-  API --> Claude[Claude API + Scenario Rules]
+  UI --> API[Express API + Rate Limit]
+  API --> Claude["Claude API<br/>(Function Calling + Prompt Cache)"]
   Claude --> Tools[Tool Executor]
   Tools --> VEH[(Vehicle State)]
   Tools --> STN[(Charging Stations)]
@@ -57,95 +87,63 @@ flowchart LR
   API --> UI
 ```
 
----
+**Agent loop**:`runAgentTurn` 注入记忆 → 调 Claude → 执行返回的 `tool_use` 块(支持多步)→ 把 `tool_result` 回灌生成最终答复 → 抽取并持久化记忆候选。详见 [`server/services/llm.js`](./server/services/llm.js)。
 
-## 3. 核心设计亮点 / Core Design Highlights
-
-- **场景决策引擎**：四大场景覆盖从"无事可做"到"正在赶路"的完整状态空间，Agent 按优先级组合调用多个工具
-- **多工具编排**：5 个工具（vehicle_status / search_stations / calendar / pending_tasks / charge_plan）通过标准 `tool_use` schema 协同工作
-- **分层 Prompt**：角色定义 → 场景规则 → 工具说明 → 记忆注入 → 输出约束，五层结构引导 LLM 做出合理决策
-- **跨会话记忆**：驾驶偏好持久化为 JSON，未完成任务自动在下次会话中恢复
-- **车辆状态仪表盘**：前端实时展示 SOC、续航、导航状态、工具调用链路
+**技术栈**:React 19 · Vite 7 · Tailwind 4 · Express 4 · Anthropic SDK · Zod · GitHub Actions。
 
 ---
 
-## 4. 快速启动 / Quick Start
+## 🚀 快速启动 / Quick Start
 
 ```bash
 git clone https://github.com/ChloeXue00/chargeflow-agent.git
 cd chargeflow-agent
-npm install
-cp .env.example .env
-# 在 .env 中填入 ANTHROPIC_API_KEY（可选，不填则进入 mock mode）
+npm install                      # 安装 client + server 全部依赖 (npm workspaces)
+cp .env.example .env             # 可选:在 .env 填入 ANTHROPIC_API_KEY
 
-npm run dev:server
-npm run dev:client
+npm run dev:server               # 后端  → http://localhost:3001
+npm run dev:client               # 前端  → http://localhost:5173
 ```
 
-也可以先 build 再启动：
+> 💡 **无需 API key 也能完整演示**:未配置 `ANTHROPIC_API_KEY` 时,Agent 自动进入 **mock 模式**,UI、工具调用链路与记忆面板全部可用。填入 key 即切换到真实 Claude 推理。
 
-```bash
-npm run build
-npm start
-```
-
-- 前端 / Frontend: <http://localhost:5173>
-- 后端 / Backend: <http://localhost:3001>
-
-说明：后端是纯 API 服务，直接访问根路径 `/` 会显示 `Cannot GET /`，这是正常现象。
+线上一键部署见 👉 [`DEPLOY.md`](./DEPLOY.md)(Vercel 前端 + Render 后端)。
 
 ---
 
-## 5. 产品文档 / Product Documentation
-- [PRD](./docs/PRD.md)
-- [Architecture](./docs/architecture.md)
-- [Prompt Design](./docs/prompt-design.md)
-- [English README](./README_EN.md)
-
----
-
-## 6. 项目结构 / Project Structure
+## 📂 项目结构 / Project Structure
 
 ```text
 chargeflow-agent/
-├── README.md
-├── README_EN.md
-├── docs/
-│   ├── PRD.md
-│   ├── architecture.md
-│   └── prompt-design.md
-├── client/
-│   ├── src/
-│   │   ├── App.jsx
-│   │   ├── components/
-│   │   │   ├── ChatWindow.jsx
-│   │   │   ├── MessageBubble.jsx
-│   │   │   ├── ToolCallDisplay.jsx
-│   │   │   ├── MemoryPanel.jsx
-│   │   │   └── VehicleStatus.jsx
-│   │   ├── hooks/
-│   │   │   └── useChat.js
-│   │   └── utils/
-│   │       └── api.js
-│   └── package.json
-├── server/
-│   ├── index.js
-│   ├── routes/
-│   │   └── chat.js
+├── client/                      # React 19 + Vite + Tailwind 座舱前端
+│   └── src/
+│       ├── App.jsx
+│       ├── components/          # VehicleStatus / ChatWindow / ToolCallDisplay / MemoryPanel ...
+│       ├── hooks/useChat.js
+│       └── utils/api.js
+├── server/                      # Express API
+│   ├── index.js                 # CORS / 限流 / 路由
+│   ├── routes/chat.js           # 对话端点 + 输入校验
+│   ├── middleware/rateLimit.js  # 无依赖滑动窗口限流
 │   ├── services/
-│   │   ├── llm.js
-│   │   ├── tools.js
-│   │   └── memory.js
-│   ├── data/
-│   │   ├── vehicle_state.json
-│   │   ├── charging_stations.json
-│   │   ├── calendar.json
-│   │   ├── pending_tasks.json
-│   │   └── memory.json
-│   └── package.json
-├── .env.example
-├── .gitignore
-└── LICENSE
+│   │   ├── llm.js               # Agent loop · Function Calling · Prompt Cache
+│   │   ├── tools.js             # 5 个工具的 schema 与执行器
+│   │   └── memory.js            # 跨会话记忆抽取与持久化
+│   └── data/                    # 车况 / 充电站 / 日历 / 任务 / 记忆 (mock 数据)
+├── docs/                        # PRD · architecture · prompt-design · screenshots
+├── render.yaml                  # Render 后端部署蓝图
+├── client/vercel.json           # Vercel 前端部署配置
+└── .github/workflows/ci.yml     # CI: lint + build (Node 18/20/22)
 ```
 
+---
 
+## 📖 文档 / Documentation
+- [产品需求 PRD](./docs/PRD.md)
+- [架构设计 Architecture](./docs/architecture.md)
+- [Prompt 设计 Prompt Design](./docs/prompt-design.md)
+- [部署指南 Deploy Guide](./DEPLOY.md)
+- [English README](./README_EN.md)
+
+## 📜 License
+[MIT](./LICENSE)

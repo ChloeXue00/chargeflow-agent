@@ -18,6 +18,16 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'messages must be an array.' });
     }
 
+    // Guard against oversized conversations inflating API cost on the public demo.
+    const MAX_MESSAGES = 40;
+    const MAX_CONTENT_CHARS = 8000;
+    if (messages.length > MAX_MESSAGES) {
+      return res.status(400).json({ error: `Conversation too long (max ${MAX_MESSAGES} messages).` });
+    }
+    if (messages.some((m) => typeof m?.content === 'string' && m.content.length > MAX_CONTENT_CHARS)) {
+      return res.status(400).json({ error: `Message too long (max ${MAX_CONTENT_CHARS} characters).` });
+    }
+
     const response = await runAgentTurn(messages);
     return res.json(response);
   } catch (error) {

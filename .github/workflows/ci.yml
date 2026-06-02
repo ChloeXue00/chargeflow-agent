@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    name: Lint & build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install workspace dependencies
+        run: npm install --workspaces --include-workspace-root
+
+      - name: Lint client
+        run: npm run lint --workspace client
+
+      - name: Build client
+        run: npm run build --workspace client
+
+      - name: Type-check server entrypoint
+        run: node --check server/index.js
