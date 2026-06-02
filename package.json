@@ -16,7 +16,7 @@
     "start": "npm run start --workspace server"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "keywords": [
     "ai-agent",

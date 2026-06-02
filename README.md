@@ -8,7 +8,7 @@ _An LLM-powered intelligent EV cockpit agent: scenario reasoning, multi-tool orc
 [![CI](https://github.com/ChloeXue00/chargeflow-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/ChloeXue00/chargeflow-agent/actions/workflows/ci.yml)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-online-brightgreen)](https://chargeflow-agent.vercel.app)
 ![React](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
-![Node](https://img.shields.io/badge/Node-%E2%89%A518-339933?logo=node.js&logoColor=white)
+![Node](https://img.shields.io/badge/Node-%E2%89%A520-339933?logo=node.js&logoColor=white)
 ![Claude](https://img.shields.io/badge/Claude-Function%20Calling-d97757)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
@@ -36,7 +36,7 @@ ChargeFlow Agent 把一个"找附近充电站"的工具型 app，升级为能感
 | **Prompt Caching** | 静态 system prompt 通过 `cache_control` 缓存,记忆作为独立块注入,使大前缀稳定命中缓存,**输入成本降低 ~90%、首字延迟更低** |
 | **跨会话记忆** | 驾驶偏好与未完成任务持久化为 JSON,下次会话自动恢复并重新评估 |
 | **可安全公开部署** | `/api/chat` 加滑动窗口**限流**、请求体积与对话长度上限,保护真实 API key 不被刷量 |
-| **CI** | GitHub Actions 在 Node 18/20/22 矩阵上 lint + build,徽章实时反映健康度 |
+| **CI** | GitHub Actions 在 Node 20/22 矩阵上 lint + build,徽章实时反映健康度 |
 
 ---
 
@@ -133,7 +133,7 @@ chargeflow-agent/
 ├── docs/                        # PRD · architecture · prompt-design · screenshots
 ├── render.yaml                  # Render 后端部署蓝图
 ├── client/vercel.json           # Vercel 前端部署配置
-└── .github/workflows/ci.yml     # CI: lint + build (Node 18/20/22)
+└── .github/workflows/ci.yml     # CI: lint + build (Node 20/22)
 ```
 
 ---

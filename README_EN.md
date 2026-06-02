@@ -7,7 +7,7 @@
 [![CI](https://github.com/ChloeXue00/chargeflow-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/ChloeXue00/chargeflow-agent/actions/workflows/ci.yml)
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-online-brightgreen)](https://chargeflow-agent.vercel.app)
 ![React](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
-![Node](https://img.shields.io/badge/Node-%E2%89%A518-339933?logo=node.js&logoColor=white)
+![Node](https://img.shields.io/badge/Node-%E2%89%A520-339933?logo=node.js&logoColor=white)
 ![Claude](https://img.shields.io/badge/Claude-Function%20Calling-d97757)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
@@ -35,7 +35,7 @@ ChargeFlow Agent is not a simple "low battery, find a charger" tool. It is an en
 | **Prompt caching** | The static system prompt is marked with `cache_control`; memory is injected as a separate block so the large prefix stays a cache hit — **~90% lower input cost and lower latency** |
 | **Cross-session memory** | Driver preferences and unfinished tasks persist as JSON and auto-resume in the next session |
 | **Safe public deployment** | Sliding-window **rate limiting**, payload and conversation-length caps on `/api/chat` protect the real API key from abuse |
-| **CI** | GitHub Actions lints + builds on a Node 18/20/22 matrix |
+| **CI** | GitHub Actions lints + builds on a Node 20/22 matrix |
 
 ---
 
