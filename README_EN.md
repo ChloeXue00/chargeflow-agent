@@ -39,6 +39,27 @@ ChargeFlow Agent is not a simple "low battery, find a charger" tool. It is an en
 
 ---
 
+## 📱 One Brain, Two Surfaces
+
+The same **Express + Claude agent backend** powers two frontends (sharing `useChat` + `/api`):
+
+| Surface | Route | Form | Purpose |
+| --- | --- | --- | --- |
+| **In-car cockpit** | [`/`](https://chargeflow-agent.vercel.app) | landscape dashboard | the **embedded in-car** form (recruiter demo) |
+| **Mobile mini-app** | [`/m`](https://chargeflow-agent.vercel.app/m) | phone portrait · **installable PWA** | acquisition / **user beta to validate demand** |
+
+The mobile surface re-skins the original [Figma design](./docs/DESIGN.md) (cyan/teal language) and upgrades the "find a charger" tool into a conversational agent:
+
+<p align="center">
+  <img src="./docs/screenshots/m1-agent.png" width="30%" alt="Agent chat + station cards" />
+  <img src="./docs/screenshots/m2-status.png" width="30%" alt="Vehicle status / SOC ring" />
+  <img src="./docs/screenshots/m3-me.png" width="30%" alt="Cross-session memory" />
+</p>
+
+> 📐 Full **design → implementation** walkthrough and the product pivot: **[docs/DESIGN.md](./docs/DESIGN.md)**.
+
+---
+
 ## 🎬 Core Scenarios
 
 ### Scenario A — No destination, proactive charging
@@ -102,6 +123,9 @@ npm run dev:server               # backend  → http://localhost:3001
 npm run dev:client               # frontend → http://localhost:5173
 ```
 
+- In-car cockpit: <http://localhost:5173>
+- Mobile mini-app (PWA): <http://localhost:5173/m>
+
 > 💡 **Works without an API key**: if `ANTHROPIC_API_KEY` is missing, the agent runs in **mock mode** — the full UI, tool-call trace, and memory panel all work. Add a key to switch to real Claude reasoning.
 
 One-click cloud deploy 👉 [`DEPLOY.md`](./DEPLOY.md) (Vercel frontend + Render backend).
@@ -112,6 +136,8 @@ One-click cloud deploy 👉 [`DEPLOY.md`](./DEPLOY.md) (Vercel frontend + Render
 - [PRD (CN)](./docs/PRD.md)
 - [Architecture](./docs/architecture.md)
 - [Prompt Design](./docs/prompt-design.md)
+- [🎨 Design to Implementation](./docs/DESIGN.md)
+- [Figma Prototype](https://www.figma.com/proto/Lx9zKvPVRtMMtm7VvqeoWR/%E7%94%B5%E5%8A%A8%E8%BD%A6%E6%99%BA%E8%83%BD%E5%85%85%E7%94%B5%E5%B0%8F%E7%A8%8B%E5%BA%8F?node-id=105-758)
 - [Deploy Guide](./DEPLOY.md)
 
 ## 🛣️ Future Improvements

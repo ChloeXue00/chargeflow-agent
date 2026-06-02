@@ -69,6 +69,16 @@
 
 ---
 
+## ④.5 移动端内测 / Mobile Beta（可选）
+
+部署后,移动小程序版在 **`https://你的域名.vercel.app/m`**(注意 `/m`)。
+
+1. **生成二维码**:把 `/m` 地址丢进任意二维码生成器(或 `npx qrcode "https://你的域名.vercel.app/m"`),贴到朋友圈 / 内测群,扫码即用、可"添加到主屏幕"当 App(已配 PWA)。
+2. **看内测数据**:前端已接入 **Vercel Web Analytics**。到 Vercel 项目 → **Analytics** 标签 → 开启即可看 PV / 访客;代码里还埋了自定义事件 **`agent_message`**(带 `surface: mobile | cockpit`),用来量化"到底有多少人真的在跟 Agent 对话"——这是验证需求最直接的信号。
+3. 想要更强的留存/转化分析,可再接 PostHog / Plausible(非必需)。
+
+---
+
 ## 成本与安全 / Cost & Safety
 
 - 后端已内置 `/api/chat` **限流**(默认 60s/IP 最多 20 次,可用 `RATE_LIMIT_MAX` 调整)、请求体上限 256KB、对话长度上限,防止 key 被刷量。

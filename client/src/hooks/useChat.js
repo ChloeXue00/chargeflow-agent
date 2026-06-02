@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { track } from '@vercel/analytics';
 import { api } from '../utils/api';
 
 const STORAGE_KEY = 'chargeflow-agent-chat';
@@ -40,6 +41,11 @@ export function useChat() {
     setMessages(nextMessages);
     setLoading(true);
     setError('');
+
+    // Beta engagement signal: how many people actually talk to the agent,
+    // and from which surface (mobile mini-app vs in-car cockpit).
+    const surface = window.location.pathname.replace(/\/+$/, '') === '/m' ? 'mobile' : 'cockpit';
+    track('agent_message', { surface });
 
     try {
       const response = await api.sendChat(nextMessages);

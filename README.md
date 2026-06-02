@@ -40,6 +40,27 @@ ChargeFlow Agent 把一个"找附近充电站"的工具型 app，升级为能感
 
 ---
 
+## 📱 一个大脑,两个表面 / One Brain, Two Surfaces
+
+同一套 **Express + Claude Agent 后端**,两个前端表面 —— 复用 `useChat` 与 `/api`:
+
+| 表面 | 路由 | 形态 | 用途 |
+| --- | --- | --- | --- |
+| **车机座舱** | [`/`](https://chargeflow-agent.vercel.app) | 横屏仪表盘 | 产品**最终嵌入车机**形态(招聘方演示) |
+| **移动小程序** | [`/m`](https://chargeflow-agent.vercel.app/m) | 手机竖屏 · **PWA 可安装** | 获客 / **拉用户内测验证需求** |
+
+移动端照原始 [Figma 设计](./docs/DESIGN.md)的青绿视觉语言还原,并把"找桩工具"升级为对话式 Agent:
+
+<p align="center">
+  <img src="./docs/screenshots/m1-agent.png" width="30%" alt="Agent 对话 + 充电站卡片" />
+  <img src="./docs/screenshots/m2-status.png" width="30%" alt="车况 / 电量环" />
+  <img src="./docs/screenshots/m3-me.png" width="30%" alt="跨会话记忆 + 我的" />
+</p>
+
+> 📐 完整「设计稿 → 实现」对照与产品演进思考见 **[docs/DESIGN.md](./docs/DESIGN.md)**。
+
+---
+
 ## 🎬 核心场景 / Core Scenarios
 
 ### 场景 A：无目的地 — 主动补能
@@ -105,6 +126,9 @@ npm run dev:server               # 后端  → http://localhost:3001
 npm run dev:client               # 前端  → http://localhost:5173
 ```
 
+- 车机座舱版 / Cockpit: <http://localhost:5173>
+- 移动小程序版 / Mobile (PWA): <http://localhost:5173/m>
+
 > 💡 **无需 API key 也能完整演示**:未配置 `ANTHROPIC_API_KEY` 时,Agent 自动进入 **mock 模式**,UI、工具调用链路与记忆面板全部可用。填入 key 即切换到真实 Claude 推理。
 
 线上一键部署见 👉 [`DEPLOY.md`](./DEPLOY.md)(Vercel 前端 + Render 后端)。
@@ -115,11 +139,14 @@ npm run dev:client               # 前端  → http://localhost:5173
 
 ```text
 chargeflow-agent/
-├── client/                      # React 19 + Vite + Tailwind 座舱前端
+├── client/                      # React 19 + Vite + Tailwind 前端
+│   ├── public/                  # PWA: manifest.webmanifest · sw.js · icons/
 │   └── src/
-│       ├── App.jsx
+│       ├── main.jsx             # 路由: / = 座舱, /m = 移动端
+│       ├── App.jsx              # 车机座舱版 (横屏)
+│       ├── mobile/              # 移动小程序版 (竖屏, Figma 视觉还原)
 │       ├── components/          # VehicleStatus / ChatWindow / ToolCallDisplay / MemoryPanel ...
-│       ├── hooks/useChat.js
+│       ├── hooks/useChat.js     # 共享数据层 (两个表面复用)
 │       └── utils/api.js
 ├── server/                      # Express API
 │   ├── index.js                 # CORS / 限流 / 路由
@@ -130,7 +157,7 @@ chargeflow-agent/
 │   │   ├── tools.js             # 5 个工具的 schema 与执行器
 │   │   └── memory.js            # 跨会话记忆抽取与持久化
 │   └── data/                    # 车况 / 充电站 / 日历 / 任务 / 记忆 (mock 数据)
-├── docs/                        # PRD · architecture · prompt-design · screenshots
+├── docs/                        # PRD · architecture · prompt-design · DESIGN · figma · screenshots
 ├── render.yaml                  # Render 后端部署蓝图
 ├── client/vercel.json           # Vercel 前端部署配置
 └── .github/workflows/ci.yml     # CI: lint + build (Node 20/22)
@@ -142,6 +169,8 @@ chargeflow-agent/
 - [产品需求 PRD](./docs/PRD.md)
 - [架构设计 Architecture](./docs/architecture.md)
 - [Prompt 设计 Prompt Design](./docs/prompt-design.md)
+- [🎨 设计 → 实现 Design to Implementation](./docs/DESIGN.md)
+- [交互原型 Figma Prototype](https://www.figma.com/proto/Lx9zKvPVRtMMtm7VvqeoWR/%E7%94%B5%E5%8A%A8%E8%BD%A6%E6%99%BA%E8%83%BD%E5%85%85%E7%94%B5%E5%B0%8F%E7%A8%8B%E5%BA%8F?node-id=105-758)
 - [部署指南 Deploy Guide](./DEPLOY.md)
 - [English README](./README_EN.md)
 
