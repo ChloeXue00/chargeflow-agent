@@ -5,17 +5,15 @@
 **An LLM-powered intelligent EV cockpit agent: scenario reasoning, multi-tool orchestration & cross-session memory.**
 
 [![CI](https://github.com/ChloeXue00/chargeflow-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/ChloeXue00/chargeflow-agent/actions/workflows/ci.yml)
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-online-brightgreen)](https://chargeflow-agent.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-online-brightgreen)](https://chargeflow-agent-client.vercel.app)
 ![React](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
 ![Node](https://img.shields.io/badge/Node-%E2%89%A520-339933?logo=node.js&logoColor=white)
 ![Claude](https://img.shields.io/badge/Claude-Function%20Calling-d97757)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
-🔗 **Live Demo:** https://chargeflow-agent.vercel.app · 📄 [PRD](./docs/PRD.md) · 🏗️ [Architecture](./docs/architecture.md) · 🧠 [Prompt Design](./docs/prompt-design.md) · 🇨🇳 [中文](./README.md)
+🔗 **Live Demo:** https://chargeflow-agent-client.vercel.app · 📄 [PRD](./docs/PRD.md) · 🏗️ [Architecture](./docs/architecture.md) · 🧠 [Prompt Design](./docs/prompt-design.md) · 🇨🇳 [中文](./README.md)
 
 </div>
-
-> _After deploying, replace both `chargeflow-agent.vercel.app` above with your real Vercel domain._
 
 ChargeFlow Agent is not a simple "low battery, find a charger" tool. It is an enterprise-grade cockpit task manager that reasons about **battery state, current trip, future schedule, and cross-session history** to make proactive charging decisions. It demonstrates the full engineering loop of an AI agent: **product scenario modeling → layered prompt engineering → Anthropic function calling → multi-tool orchestration → durable memory → a React visualization frontend.**
 
@@ -45,8 +43,8 @@ The same **Express + Claude agent backend** powers two frontends (sharing `useCh
 
 | Surface | Route | Form | Purpose |
 | --- | --- | --- | --- |
-| **In-car cockpit** | [`/`](https://chargeflow-agent.vercel.app) | landscape dashboard | the **embedded in-car** form (recruiter demo) |
-| **Mobile mini-app** | [`/m`](https://chargeflow-agent.vercel.app/m) | phone portrait · **installable PWA** | acquisition / **user beta to validate demand** |
+| **In-car cockpit** | [`/`](https://chargeflow-agent-client.vercel.app) | landscape dashboard | the **embedded in-car** form (recruiter demo) |
+| **Mobile mini-app** | [`/m`](https://chargeflow-agent-client.vercel.app/m) | phone portrait · **installable PWA** | acquisition / **user beta to validate demand** |
 
 The mobile surface re-skins the original [Figma design](./docs/DESIGN.md) (cyan/teal language) and upgrades the "find a charger" tool into a conversational agent:
 

@@ -6,17 +6,15 @@
 _An LLM-powered intelligent EV cockpit agent: scenario reasoning, multi-tool orchestration & cross-session memory._
 
 [![CI](https://github.com/ChloeXue00/chargeflow-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/ChloeXue00/chargeflow-agent/actions/workflows/ci.yml)
-[![Live Demo](https://img.shields.io/badge/Live%20Demo-online-brightgreen)](https://chargeflow-agent.vercel.app)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-online-brightgreen)](https://chargeflow-agent-client.vercel.app)
 ![React](https://img.shields.io/badge/React-19-61dafb?logo=react&logoColor=white)
 ![Node](https://img.shields.io/badge/Node-%E2%89%A520-339933?logo=node.js&logoColor=white)
 ![Claude](https://img.shields.io/badge/Claude-Function%20Calling-d97757)
 ![License](https://img.shields.io/badge/License-MIT-blue)
 
-🔗 **Live Demo:** https://chargeflow-agent.vercel.app · 📄 [PRD](./docs/PRD.md) · 🏗️ [Architecture](./docs/architecture.md) · 🧠 [Prompt Design](./docs/prompt-design.md) · 🇬🇧 [English](./README_EN.md)
+🔗 **Live Demo:** https://chargeflow-agent-client.vercel.app · 📄 [PRD](./docs/PRD.md) · 🏗️ [Architecture](./docs/architecture.md) · 🧠 [Prompt Design](./docs/prompt-design.md) · 🇬🇧 [English](./README_EN.md)
 
 </div>
-
-> _部署后请把上方两处 `chargeflow-agent.vercel.app` 替换为你的真实 Vercel 域名。_
 
 ChargeFlow Agent 把一个"找附近充电站"的工具型 app，升级为能感知 **电量状态、当前任务、未来行程、跨时段记忆** 的企业级座舱任务管家。它展示了一个 AI Agent 的完整工程闭环:**产品场景建模 → 分层 Prompt Engineering → Anthropic Function Calling → 多工具编排 → 持久化记忆 → React 可视化前端**。
 
@@ -46,8 +44,8 @@ ChargeFlow Agent 把一个"找附近充电站"的工具型 app，升级为能感
 
 | 表面 | 路由 | 形态 | 用途 |
 | --- | --- | --- | --- |
-| **车机座舱** | [`/`](https://chargeflow-agent.vercel.app) | 横屏仪表盘 | 产品**最终嵌入车机**形态(招聘方演示) |
-| **移动小程序** | [`/m`](https://chargeflow-agent.vercel.app/m) | 手机竖屏 · **PWA 可安装** | 获客 / **拉用户内测验证需求** |
+| **车机座舱** | [`/`](https://chargeflow-agent-client.vercel.app) | 横屏仪表盘 | 产品**最终嵌入车机**形态(招聘方演示) |
+| **移动小程序** | [`/m`](https://chargeflow-agent-client.vercel.app/m) | 手机竖屏 · **PWA 可安装** | 获客 / **拉用户内测验证需求** |
 
 移动端照原始 [Figma 设计](./docs/DESIGN.md)的青绿视觉语言还原,并把"找桩工具"升级为对话式 Agent:
 
@@ -157,7 +155,7 @@ chargeflow-agent/
 │   │   ├── tools.js             # 5 个工具的 schema 与执行器
 │   │   └── memory.js            # 跨会话记忆抽取与持久化
 │   └── data/                    # 车况 / 充电站 / 日历 / 任务 / 记忆 (mock 数据)
-├── api/[...path].mjs            # Vercel Serverless 入口 (包装 Express app)
+├── api/index.mjs                # Vercel Serverless 入口 (包装 Express app)
 ├── docs/                        # PRD · architecture · prompt-design · DESIGN · figma · screenshots
 ├── vercel.json                  # 全栈部署 (静态前端 + Serverless API)
 └── .github/workflows/ci.yml     # CI: lint + build (Node 20/22)
