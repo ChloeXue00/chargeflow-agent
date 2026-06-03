@@ -2,7 +2,17 @@ import ChatWindow from './components/ChatWindow';
 import MemoryPanel from './components/MemoryPanel';
 import ToolCallDisplay from './components/ToolCallDisplay';
 import VehicleStatus from './components/VehicleStatus';
+import AmapView, { AMAP_MAP_ENABLED } from './components/AmapView';
 import { useChat } from './hooks/useChat';
+
+/** Pull station arrays out of the latest search_nearby_stations tool result. */
+function latestStations(toolCalls = []) {
+  const call = [...toolCalls].reverse().find((c) => c.name === 'search_nearby_stations');
+  const r = call?.result;
+  if (Array.isArray(r)) return r;
+  if (Array.isArray(r?.stations)) return r.stations;
+  return [];
+}
 
 /**
  * ChargeFlow Agent cockpit UI.
@@ -37,6 +47,13 @@ export default function App() {
           </div>
 
           <VehicleStatus />
+
+          {AMAP_MAP_ENABLED && (
+            <section className="rounded-3xl border border-slate-700 bg-slate-900/75 p-4 shadow-2xl backdrop-blur">
+              <h2 className="mb-3 text-sm font-semibold text-slate-200">附近充电地图 / Nearby Map</h2>
+              <AmapView stations={latestStations(toolCalls)} height={260} />
+            </section>
+          )}
 
           <ChatWindow
             messages={messages}

@@ -33,7 +33,7 @@ ChargeFlow Agent is not a simple "low battery, find a charger" tool. It is an en
 | **Prompt caching** | The static system prompt is marked with `cache_control`; memory is injected as a separate block so the large prefix stays a cache hit — **~90% lower input cost and lower latency** |
 | **Cross-session memory** | Driver preferences and unfinished tasks persist as JSON and auto-resume in the next session |
 | **Safe public deployment** | Sliding-window **rate limiting**, payload and conversation-length caps on `/api/chat` protect the real API key from abuse |
-| **Real data (optional)** | Set `AMAP_WEB_KEY` to fetch **real nearby charging stations** via Amap POI search; falls back to mock data when unset, so the demo runs with zero config |
+| **Real data / map (optional)** | `AMAP_WEB_KEY` → **real nearby charging stations** via Amap POI; `VITE_AMAP_JS_KEY` → an **interactive map** (vehicle + station markers). Both fall back gracefully (mock data / hidden map) when unset, so the demo runs with zero config |
 | **CI** | GitHub Actions lints + builds on a Node 20/22 matrix |
 
 ---

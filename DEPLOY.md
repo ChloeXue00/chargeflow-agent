@@ -33,7 +33,9 @@
    | --- | --- |
    | `ANTHROPIC_API_KEY` | 你的真实 key `sk-ant-...` |
    | `ANTHROPIC_MODEL` | `claude-sonnet-4-6`(可选) |
-   | `AMAP_WEB_KEY` | 高德 Web服务 key(可选)—— 配了就用**真实附近充电站**搜索,不配回退 mock |
+   | `AMAP_WEB_KEY` | 高德 **Web服务** key(可选)—— 配了就用**真实附近充电站**搜索,不配回退 mock |
+   | `VITE_AMAP_JS_KEY` | 高德 **Web端(JS API)** key(可选)—— 配了渲染**实时地图**,不配则不显示地图(UI 不变) |
+   | `VITE_AMAP_SECURITY` | 高德 JS API **安全密钥**(与上面的 JS key 配套生成,必填二者) |
 4. 点 **Deploy**,等待构建完成
 
 构建做了三件事(由根 `vercel.json` 驱动):`npm install` → `npm run build --workspace client` → 把 `api/` 目录部署为 Serverless Functions。

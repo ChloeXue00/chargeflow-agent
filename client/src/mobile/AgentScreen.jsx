@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { BRAND } from './ui';
 import StationCard from './StationCard';
+import AmapView, { AMAP_MAP_ENABLED } from '../components/AmapView';
 
 const CHIPS = [
   '现在电量够不够用？',
@@ -56,6 +57,7 @@ export default function AgentScreen({ messages, toolCalls, loading, error, onSen
         {stations.length > 0 && (
           <div className="space-y-2">
             <div className="px-1 text-[11px] font-medium text-slate-400">附近可用充电站</div>
+            {AMAP_MAP_ENABLED && <AmapView stations={stations} height={200} />}
             {stations.map((s, i) => (
               <StationCard key={s.id || i} station={s} />
             ))}
