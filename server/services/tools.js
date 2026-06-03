@@ -10,6 +10,8 @@ import stationsData from '../data/charging_stations.json' with { type: 'json' };
 import calendarData from '../data/calendar.json' with { type: 'json' };
 import pendingSeed from '../data/pending_tasks.json' with { type: 'json' };
 
+import { amapEnabled, searchChargingStations } from './amap.js';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const pendingTasksPath = path.join(__dirname, '..', 'data', 'pending_tasks.json');
@@ -85,20 +87,32 @@ export async function getVehicleStatus() {
  */
 export async function searchNearbyStations(input = {}) {
   const { maxDistance_km, minPower_kW, network, sortBy } = searchStationsSchema.parse(input);
-  const stations = stationsData;
+
+  // Prefer real Amap data when configured; fall back to bundled mock data.
+  let stations = stationsData;
+  if (amapEnabled()) {
+    try {
+      const { lng, lat } = vehicleState.currentLocation || {};
+      const real = await searchChargingStations({ lng, lat, radius_m: maxDistance_km * 1000 });
+      if (real.length) stations = real;
+    } catch (error) {
+      console.warn('Amap station search failed, using mock data:', error.message);
+    }
+  }
 
   const filtered = stations.filter((s) => {
-    if (s.distance_km > maxDistance_km) return false;
-    if (s.maxPower_kW < minPower_kW) return false;
-    if (network && !s.network.toLowerCase().includes(network.toLowerCase())) return false;
+    if (typeof s.distance_km === 'number' && s.distance_km > maxDistance_km) return false;
+    if (typeof s.maxPower_kW === 'number' && s.maxPower_kW < minPower_kW) return false;
+    if (network && (!s.network || !s.network.toLowerCase().includes(network.toLowerCase()))) return false;
     return true;
   });
 
+  const num = (v, fallback) => (typeof v === 'number' ? v : fallback);
   const sortFns = {
-    distance: (a, b) => a.distance_km - b.distance_km,
-    speed: (a, b) => b.maxPower_kW - a.maxPower_kW,
-    price: (a, b) => a.pricePerKWh - b.pricePerKWh,
-    availability: (a, b) => b.availablePorts - a.availablePorts,
+    distance: (a, b) => num(a.distance_km, Infinity) - num(b.distance_km, Infinity),
+    speed: (a, b) => num(b.maxPower_kW, 0) - num(a.maxPower_kW, 0),
+    price: (a, b) => num(a.pricePerKWh, Infinity) - num(b.pricePerKWh, Infinity),
+    availability: (a, b) => num(b.availablePorts, 0) - num(a.availablePorts, 0),
   };
 
   return filtered.sort(sortFns[sortBy] || sortFns.distance);

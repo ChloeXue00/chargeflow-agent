@@ -33,6 +33,7 @@
    | --- | --- |
    | `ANTHROPIC_API_KEY` | 你的真实 key `sk-ant-...` |
    | `ANTHROPIC_MODEL` | `claude-sonnet-4-6`(可选) |
+   | `AMAP_WEB_KEY` | 高德 Web服务 key(可选)—— 配了就用**真实附近充电站**搜索,不配回退 mock |
 4. 点 **Deploy**,等待构建完成
 
 构建做了三件事(由根 `vercel.json` 驱动):`npm install` → `npm run build --workspace client` → 把 `api/` 目录部署为 Serverless Functions。
