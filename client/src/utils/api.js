@@ -7,14 +7,30 @@ const API_BASE =
     : '/api');
 
 async function request(path, options = {}) {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
+  // Abort very slow requests so the UI fails clearly instead of hanging.
+  // The agent's first call can be slow on a serverless cold start, so allow 90s.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), options.timeoutMs ?? 90_000);
+
+  let response;
+  try {
+    response = await fetch(`${API_BASE}${path}`, {
+      headers: { 'Content-Type': 'application/json' },
+      signal: controller.signal,
+      ...options,
+    });
+  } catch (err) {
+    if (err.name === 'AbortError') {
+      throw new Error('请求超时,服务可能正在冷启动,请重试。 / Request timed out (cold start) — please retry.');
+    }
+    throw new Error('网络请求失败,请检查网络后重试。 / Network error — please retry.');
+  } finally {
+    clearTimeout(timeout);
+  }
 
   if (!response.ok) {
     const payload = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(payload.error || 'Request failed');
+    throw new Error(payload.error || `Request failed (${response.status})`);
   }
 
   return response.json();
