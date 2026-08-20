@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { BRAND } from './ui';
 import StationCard from './StationCard';
 import AmapView, { AMAP_MAP_ENABLED } from '../components/AmapView';
+import DecisionCard from '../components/DecisionCard';
 
 const CHIPS = [
   '现在电量够不够用？',
@@ -51,7 +52,7 @@ export default function AgentScreen({ messages, toolCalls, loading, error, onSen
       {/* messages */}
       <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4">
         {messages.map((m) => (
-          <Bubble key={m.id} message={m} />
+          <Bubble key={m.id} message={m} onAction={onSend} />
         ))}
 
         {stations.length > 0 && (
@@ -140,7 +141,7 @@ export default function AgentScreen({ messages, toolCalls, loading, error, onSen
   );
 }
 
-function Bubble({ message }) {
+function Bubble({ message, onAction }) {
   const isAssistant = message.role === 'assistant';
   if (isAssistant) {
     return (
@@ -148,6 +149,7 @@ function Bubble({ message }) {
         <div className="max-w-[85%] rounded-2xl rounded-tl-sm border border-slate-200 bg-white px-3.5 py-2.5 text-sm leading-6 text-slate-700 shadow-sm">
           <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-cyan-500">ChargeFlow</div>
           <div className="whitespace-pre-wrap">{message.content}</div>
+          <DecisionCard decision={message.decision} onAction={onAction} compact />
         </div>
       </div>
     );

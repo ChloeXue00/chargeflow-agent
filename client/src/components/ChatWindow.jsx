@@ -30,7 +30,7 @@ export default function ChatWindow({ messages, loading, error, onSend, onReset }
 
       <div className="flex-1 space-y-4 overflow-y-auto px-6 py-5">
         {messages.map((message) => (
-          <MessageBubble key={message.id} message={message} />
+          <MessageBubble key={message.id} message={message} onAction={onSend} />
         ))}
         {loading && <div className="text-sm text-slate-400">ChargeFlow Agent is analyzing your energy state...</div>}
         {error && <div className="rounded-2xl bg-red-500/15 px-4 py-3 text-sm text-red-200">{error}</div>}

@@ -1,4 +1,6 @@
-export default function MessageBubble({ message }) {
+import DecisionCard from './DecisionCard';
+
+export default function MessageBubble({ message, onAction }) {
   const isAssistant = message.role === 'assistant';
 
   return (
@@ -17,6 +19,7 @@ export default function MessageBubble({ message }) {
         {message.mode && (
           <div className="mt-2 text-[10px] text-slate-300/60">mode: {message.mode}</div>
         )}
+        {isAssistant && <DecisionCard decision={message.decision} onAction={onAction} />}
       </div>
     </div>
   );

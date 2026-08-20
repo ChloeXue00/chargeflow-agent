@@ -47,6 +47,12 @@ const chargePlanSchema = z.object({
   urgent: z.boolean().optional().default(false),
 });
 
+const tripEnergySchema = z.object({
+  distance_km: z.coerce.number().positive(),
+  roundTrip: z.boolean().optional().default(true),
+  reserveRange_km: z.coerce.number().min(10).max(80).optional().default(20),
+});
+
 const pendingTasksSchema = z.object({}).optional();
 
 // --- Helpers ---
@@ -147,6 +153,34 @@ export async function getPendingChargeTasks() {
 }
 
 /**
+ * Turn a known route/event distance into a deterministic energy decision.
+ * The LLM may choose when to use this tool, but it may not invent the distance:
+ * it should come from navigation, calendar data, or an explicit user value.
+ */
+export async function assessTripEnergy(input) {
+  const { distance_km, roundTrip, reserveRange_km } = tripEnergySchema.parse(input);
+  const tripDistance_km = Number((distance_km * (roundTrip ? 2 : 1)).toFixed(1));
+  const requiredRange_km = Number((tripDistance_km + reserveRange_km).toFixed(1));
+  const availableRange_km = vehicleState.estimatedRange_km;
+  const shortage_km = Number(Math.max(0, requiredRange_km - availableRange_km).toFixed(1));
+  const rangePerSocPoint = availableRange_km / vehicleState.soc;
+  const minimumDepartureSoc = Math.min(100, Math.ceil(requiredRange_km / rangePerSocPoint));
+
+  return {
+    sufficient: shortage_km === 0,
+    distance_km,
+    roundTrip,
+    tripDistance_km,
+    reserveRange_km,
+    requiredRange_km,
+    availableRange_km,
+    shortage_km,
+    currentSoc: vehicleState.soc,
+    minimumDepartureSoc,
+  };
+}
+
+/**
  * Create a charging plan: pick a station, set target SOC, persist as pending task.
  */
 export async function createChargePlan(input) {
@@ -233,6 +267,20 @@ export const anthropicTools = [
     },
   },
   {
+    name: 'assess_trip_energy',
+    description: 'Deterministically assess whether current battery range can cover a known trip distance plus a safety reserve. Only use a distance returned by navigation/calendar data or explicitly supplied by the user; never guess a route distance.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        distance_km: { type: 'number', description: 'Known one-way route distance in km.' },
+        roundTrip: { type: 'boolean', description: 'Whether to assess a round trip. Default true.' },
+        reserveRange_km: { type: 'number', description: 'Safety reserve in km. Default 20.' },
+      },
+      required: ['distance_km'],
+      additionalProperties: false,
+    },
+  },
+  {
     name: 'create_charge_plan',
     description: 'Create a charging plan by selecting a station and target SOC. This persists as a pending task the user can execute or defer.',
     input_schema: {
@@ -252,7 +300,7 @@ export const anthropicTools = [
 /**
  * Single dispatch entry for tool execution.
  */
-export async function executeTool(name, input) {
+export async function executeTool(name, input, context = {}) {
   switch (name) {
     case 'get_vehicle_status':
       return getVehicleStatus();
@@ -262,7 +310,17 @@ export async function executeTool(name, input) {
       return getCalendarEvents(input);
     case 'get_pending_charge_tasks':
       return getPendingChargeTasks();
+    case 'assess_trip_energy':
+      return assessTripEnergy(input);
     case 'create_charge_plan':
+      if (context.allowWrite === false) {
+        return {
+          status: 'awaiting_confirmation',
+          approvalRequired: true,
+          proposedPlan: chargePlanSchema.parse(input),
+          message: 'The plan is ready but has not been persisted. Ask the driver to confirm with Yes/No.',
+        };
+      }
       return createChargePlan(input);
     default:
       throw new Error(`Unknown tool: ${name}`);

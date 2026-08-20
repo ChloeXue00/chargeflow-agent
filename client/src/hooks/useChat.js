@@ -58,6 +58,7 @@ export function useChat() {
           role: 'assistant',
           content: response.message,
           mode: response.mode,
+          decision: response.decision || null,
         },
       ]);
     } catch (err) {
