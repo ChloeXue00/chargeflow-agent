@@ -123,12 +123,18 @@ function buildDecision(toolCalls) {
 }
 
 function toAnthropicMessages(messages) {
-  return messages.map((message) => ({
-    role: message.role,
-    content: message.role === 'assistant'
-      ? [{ type: 'text', text: message.content }]
-      : message.content,
-  }));
+  return messages
+    .filter((message) => (
+      (message?.role === 'user' || message?.role === 'assistant')
+      && typeof message.content === 'string'
+      && message.content.trim().length > 0
+    ))
+    .map((message) => ({
+      role: message.role,
+      content: message.role === 'assistant'
+        ? [{ type: 'text', text: message.content }]
+        : message.content,
+    }));
 }
 
 /**
