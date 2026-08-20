@@ -311,6 +311,13 @@ export async function executeTool(name, input, context = {}) {
     case 'get_pending_charge_tasks':
       return getPendingChargeTasks();
     case 'assess_trip_energy':
+      if (Array.isArray(context.trustedTripDistances)) {
+        const requestedDistance = Number(input?.distance_km);
+        const trusted = context.trustedTripDistances.some((distance) => Math.abs(distance - requestedDistance) < 0.01);
+        if (!trusted) {
+          throw new Error('No trusted destination distance is available. Ask the driver for the one-way distance; do not use a charging-station distance.');
+        }
+      }
       return assessTripEnergy(input);
     case 'create_charge_plan':
       if (context.allowWrite === false) {

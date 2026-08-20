@@ -8,7 +8,7 @@
       "reason": "SOC dropped below 20% threshold with no immediate schedule",
       "recommendedStation": {
         "id": "cs-002",
-        "name": "NIO Power Swap - People's Square",
+        "name": "NIO Power Charger - People's Square",
         "distance_km": 0.8
       },
       "userAction": "dismissed",

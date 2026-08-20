@@ -53,6 +53,9 @@ Tool layer:
 - Use create_charge_plan to persist a recommendation the user can act on.
 - NEVER guess battery levels, station availability, or distances — always use tools.
 - Calendar data belongs to the demo snapshot. Do not invent year-wide ranges; omit date ranges when a keyword is enough.
+- A charging station's distance is only the distance from the car to that station. NEVER reuse it as the distance to the driver's destination.
+- If navigation, calendar, or the driver has not provided a destination distance, ask one short clarification question instead of estimating it.
+- Do not claim the driver can arrive on time unless route travel time plus wait/charge time is known and fits the available window.
 
 Memory layer:
 - Remembered facts about this driver are provided in a separate system block. Use them when making recommendations.
@@ -88,7 +91,8 @@ function getText(response) {
 function buildDecision(toolCalls) {
   const latest = (name) => [...toolCalls].reverse().find((call) => call.name === name)?.result;
   const vehicle = latest('get_vehicle_status');
-  const assessment = latest('assess_trip_energy');
+  const assessmentResult = latest('assess_trip_energy');
+  const assessment = typeof assessmentResult?.sufficient === 'boolean' ? assessmentResult : null;
   const stationsResult = latest('search_nearby_stations');
   const stations = Array.isArray(stationsResult) ? stationsResult : stationsResult?.stations || [];
   const plan = latest('create_charge_plan');
@@ -120,6 +124,31 @@ function buildDecision(toolCalls) {
     requiresConfirmation: Boolean(options.length) && plan?.status !== 'pending',
     prompt: options.length ? '是否执行主方案？' : null,
   };
+}
+
+function getTrustedTripDistances(messages, toolCalls) {
+  const distances = [];
+  const vehicleCalls = toolCalls.filter((call) => call.name === 'get_vehicle_status');
+  const calendarCalls = toolCalls.filter((call) => call.name === 'get_calendar_events');
+
+  for (const call of vehicleCalls) {
+    const value = call.result?.navigation?.remainingDistance_km;
+    if (Number.isFinite(value)) distances.push(value);
+  }
+  for (const call of calendarCalls) {
+    const events = Array.isArray(call.result) ? call.result : [];
+    for (const event of events) {
+      if (Number.isFinite(event?.distance_km)) distances.push(event.distance_km);
+    }
+  }
+  for (const message of messages) {
+    if (message?.role !== 'user' || typeof message.content !== 'string') continue;
+    for (const match of message.content.matchAll(/(\d+(?:\.\d+)?)\s*(?:km|公里)/gi)) {
+      distances.push(Number(match[1]));
+    }
+  }
+
+  return [...new Set(distances)];
 }
 
 function toAnthropicMessages(messages) {
@@ -183,7 +212,7 @@ function createMockResponse(messages, memory) {
       name: 'search_nearby_stations',
       input: { maxDistance_km: 10, sortBy: 'distance' },
       result: [
-        { id: 'cs-002', name: 'NIO Power Swap - People\'s Square', distance_km: 0.8, availablePorts: 2, maxPower_kW: 180, estimatedWait_min: 10 },
+        { id: 'cs-002', name: 'NIO Power Charger - People\'s Square', distance_km: 0.8, availablePorts: 2, maxPower_kW: 180, estimatedWait_min: 10 },
         { id: 'cs-001', name: 'Tesla Supercharger - Lujiazui Center', distance_km: 3.2, availablePorts: 5, maxPower_kW: 250, estimatedWait_min: 0 },
       ],
     });
@@ -208,11 +237,11 @@ function createMockResponse(messages, memory) {
       name: 'search_nearby_stations',
       input: { maxDistance_km: 10, sortBy: 'distance' },
       result: [
-        { id: 'cs-002', name: 'NIO Power Swap - People\'s Square', distance_km: 0.8, availablePorts: 2, maxPower_kW: 180 },
+        { id: 'cs-002', name: 'NIO Power Charger - People\'s Square', distance_km: 0.8, availablePorts: 2, maxPower_kW: 180 },
         { id: 'cs-001', name: 'Tesla Supercharger - Lujiazui Center', distance_km: 3.2, availablePorts: 5, maxPower_kW: 250 },
       ],
     });
-    reply = '当前 SOC 18%，续航仅 62km。最近的站点是 NIO Power Swap（0.8km，2 个空闲桩，180kW），推荐立即前往。是否导航过去？';
+    reply = '当前 SOC 18%，续航仅 62km。最近的站点是 NIO Power Charger（0.8km，2 个空闲桩，180kW），推荐立即前往。是否导航过去？';
   } else if (latest.includes('日程') || latest.includes('calendar') || latest.includes('行程') || latest.includes('明天')) {
     toolCalls.push({
       id: `toolu_${Date.now()}`,
@@ -230,10 +259,10 @@ function createMockResponse(messages, memory) {
       name: 'get_pending_charge_tasks',
       input: {},
       result: [
-        { id: 'task-001', status: 'pending', recommendedStation: { name: 'NIO Power Swap - People\'s Square', distance_km: 0.8 }, reason: 'SOC dropped below 20% threshold' },
+        { id: 'task-001', status: 'pending', recommendedStation: { name: 'NIO Power Charger - People\'s Square', distance_km: 0.8 }, reason: 'SOC dropped below 20% threshold' },
       ],
     });
-    reply = '上次系统建议你去 NIO Power Swap 充电（0.8km），但你当时跳过了。当前电量仍然偏低（18%），建议现在执行这个补能计划。要导航过去吗？';
+    reply = '上次系统建议你去 NIO Power Charger 充电（0.8km），但你当时跳过了。当前电量仍然偏低（18%），建议现在执行这个补能计划。要导航过去吗？';
   } else if (memory.facts.length) {
     reply = `我记得你的一些偏好：${memory.facts.slice(-2).map((item) => item.content).join('；')}。有什么我可以帮你规划的吗？`;
   }
@@ -301,9 +330,10 @@ export async function runAgentTurn(messages) {
     if (toolCalls.length + toolBlocks.length > MAX_TOOL_CALLS) break;
 
     loopMessages.push({ role: 'assistant', content: response.content });
+    const trustedTripDistances = getTrustedTripDistances(messages, toolCalls);
     const toolResults = await Promise.all(toolBlocks.map(async (block) => {
       try {
-        const result = await executeTool(block.name, block.input, { allowWrite });
+        const result = await executeTool(block.name, block.input, { allowWrite, trustedTripDistances });
         toolCalls.push({ id: block.id, name: block.name, input: block.input, result, round: rounds + 1 });
         return { type: 'tool_result', tool_use_id: block.id, content: JSON.stringify(result) };
       } catch (error) {
