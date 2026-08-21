@@ -61,6 +61,8 @@ export default function DecisionJourney({ messages = [], toolCalls = [], compact
 
   const confirmationEvidence = plan?.status === 'pending'
     ? `已创建任务 ${plan.id || ''}，保留后续提醒与执行证据。`
+    : plan?.error
+      ? `任务创建失败：${plan.error}。请重新确认站点。`
     : decision?.requiresConfirmation
       ? '方案已生成，等待用户 Yes / No；确认前不会写入任务或执行导航。'
       : '等待形成可确认方案。';
@@ -70,7 +72,7 @@ export default function DecisionJourney({ messages = [], toolCalls = [], compact
     { title: '读取车辆状态', status: vehicle ? 'done' : 'active', evidence: vehicle ? `SOC ${vehicle.soc}% · 可用续航 ${vehicle.estimatedRange_km}km` : '调用车辆状态工具。' },
     { title: '计算行程能耗', status: assessment || assessmentResult?.error ? 'done' : 'active', evidence: assessmentEvidence },
     { title: '比较补能方案', status: stations.length ? 'done' : 'active', evidence: optionEvidence },
-    { title: '确认并创建任务', status: plan?.status === 'pending' ? 'done' : decision?.requiresConfirmation ? 'active' : 'pending', evidence: confirmationEvidence },
+    { title: '确认并创建任务', status: plan?.status === 'pending' ? 'done' : decision?.requiresConfirmation || plan?.error ? 'active' : 'pending', evidence: confirmationEvidence },
   ];
 
   return (

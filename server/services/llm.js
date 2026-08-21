@@ -51,6 +51,7 @@ Tool layer:
 - Use get_pending_charge_tasks to check for unfinished recommendations from prior sessions.
 - Use assess_trip_energy after obtaining a known route/event distance; never invent distance inputs.
 - Use create_charge_plan to persist a recommendation the user can act on.
+- When the user's confirmation message contains an exact stationId, pass that exact value to create_charge_plan. Never derive, translate, or invent a station ID from the station name.
 - NEVER guess battery levels, station availability, or distances — always use tools.
 - Calendar data belongs to the demo snapshot. Do not invent year-wide ranges; omit date ranges when a keyword is enough.
 - A charging station's distance is only the distance from the car to that station. NEVER reuse it as the distance to the driver's destination.
@@ -79,6 +80,13 @@ function hasExplicitApproval(messages) {
   const latest = messages.at(-1)?.content;
   if (typeof latest !== 'string') return false;
   return /(^|[，。,.!\s])(yes|ok|okay|确认|同意|执行|导航过去|开始导航|就这个|按这个来|保留为待办|稍后提醒)([，。,.!\s]|$)/i.test(latest.trim());
+}
+
+function getConfirmedStationId(messages) {
+  if (!hasExplicitApproval(messages)) return null;
+  const latest = messages.at(-1)?.content;
+  if (typeof latest !== 'string') return null;
+  return latest.match(/stationId\s*[:：]\s*([a-z0-9-]+)/i)?.[1] || null;
 }
 
 function getText(response) {
@@ -327,6 +335,31 @@ function buildSystemBlocks(memory) {
 export async function runAgentTurn(messages) {
   const memory = await getMemorySnapshot();
   const system = buildSystemBlocks(memory);
+  const confirmedStationId = getConfirmedStationId(messages);
+
+  // Confirmation is a governed write path, not a free-form reasoning step.
+  // The UI carries forward the exact station ID returned by the search tool so
+  // the model never has to reconstruct an identifier from a display name.
+  if (confirmedStationId) {
+    const input = {
+      stationId: confirmedStationId,
+      targetSoc: 80,
+      urgent: false,
+      reason: '用户明确确认本轮主方案。',
+    };
+    try {
+      const result = await executeTool('create_charge_plan', input, { allowWrite: true });
+      const message = `已确认并创建补能任务：${result.recommendedStation?.name || confirmedStationId}，目标电量 ${result.targetSoc}%。导航或支付仍需你在车机端最终确认。`;
+      const toolCalls = [{ id: `toolu_${Date.now()}`, name: 'create_charge_plan', input, result, round: 1 }];
+      const persisted = await persistMemory(extractMemoryCandidates(messages, message));
+      return { message, toolCalls, mode: 'deterministic', memory: persisted, decision: buildDecision(toolCalls) };
+    } catch (error) {
+      const result = { error: error.message };
+      const message = `任务创建失败：${error.message}。请重新选择站点。`;
+      const toolCalls = [{ id: `toolu_${Date.now()}`, name: 'create_charge_plan', input, result, round: 1 }];
+      return { message, toolCalls, mode: 'deterministic', memory, decision: buildDecision(toolCalls) };
+    }
+  }
 
   if (!anthropic || process.env.MOCK_MODE === 'true') {
     const mock = createMockResponse(messages, memory);
