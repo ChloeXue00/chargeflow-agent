@@ -45,7 +45,7 @@ export default function DecisionCard({ decision, onAction, compact = false }) {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => onAction(`Yes，确认主方案：${decision.options[0]?.name || ''}`)}
+              onClick={() => onAction(`Yes，确认主方案：${decision.options[0]?.name || ''}（stationId: ${decision.options[0]?.id || ''}）`)}
               className="rounded-full bg-emerald-400 px-3 py-1.5 text-xs font-semibold text-slate-950"
             >
               Yes，确认方案
