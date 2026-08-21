@@ -49,7 +49,9 @@ export function useChat() {
 
     try {
       const response = await api.sendChat(nextMessages);
-      setToolCalls(response.toolCalls || []);
+      const responseToolCalls = response.toolCalls || [];
+      const completesExistingJourney = responseToolCalls.some((call) => call.name === 'create_charge_plan');
+      setToolCalls((current) => completesExistingJourney ? [...current, ...responseToolCalls] : responseToolCalls);
       setMemory(response.memory || { facts: [] });
       setMessages([
         ...nextMessages,

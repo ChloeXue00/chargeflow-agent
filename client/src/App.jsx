@@ -1,9 +1,18 @@
 import ChatWindow from './components/ChatWindow';
 import MemoryPanel from './components/MemoryPanel';
 import ToolCallDisplay from './components/ToolCallDisplay';
+import DecisionJourney from './components/DecisionJourney';
 import VehicleStatus from './components/VehicleStatus';
 import AmapView, { AMAP_MAP_ENABLED } from './components/AmapView';
 import { useChat } from './hooks/useChat';
+
+const DEMO_PROMPTS = [
+  '帮我看看现在电量够不够用',
+  '附近有什么充电站？',
+  '后天去浦东机场接人，单程45公里、需要往返，电量够吗？',
+  '上次的充电建议还在吗？',
+  '记住：我偏好特斯拉超充站',
+];
 
 /** Pull station arrays out of the latest search_nearby_stations tool result. */
 function latestStations(toolCalls = []) {
@@ -63,6 +72,8 @@ export default function App() {
             onReset={resetChat}
           />
 
+          <DecisionJourney messages={messages} toolCalls={toolCalls} />
+
           <ToolCallDisplay toolCalls={toolCalls} />
         </div>
 
@@ -79,7 +90,7 @@ export default function App() {
                 <span className="text-emerald-300 font-medium">B.</span> 导航途中电量告急 — 判断是否需要中途充电
               </li>
               <li className="rounded-xl border border-slate-700/50 bg-slate-800/40 px-3 py-2">
-                <span className="text-emerald-300 font-medium">C.</span> 后天要去机场接人 — 计算最晚补能时间
+                <span className="text-emerald-300 font-medium">C.</span> 后天去机场接人（45km往返）— 展示完整决策链
               </li>
               <li className="rounded-xl border border-slate-700/50 bg-slate-800/40 px-3 py-2">
                 <span className="text-emerald-300 font-medium">D.</span> 上次没充电就下车了 — 重新提醒未完成任务
@@ -88,11 +99,19 @@ export default function App() {
             <div className="mt-4 space-y-2">
               <p className="text-xs text-slate-500 uppercase tracking-wider">Try these prompts:</p>
               <ul className="space-y-2 text-sm text-slate-400">
-                <li>&#8226; 帮我看看现在电量够不够用</li>
-                <li>&#8226; 附近有什么充电站？</li>
-                <li>&#8226; 后天要去浦东机场，电量够吗？</li>
-                <li>&#8226; 上次的充电建议还在吗？</li>
-                <li>&#8226; 记住：我偏好特斯拉超充站</li>
+                {DEMO_PROMPTS.map((prompt, index) => (
+                  <li key={prompt}>
+                    <button
+                      type="button"
+                      onClick={() => sendMessage(prompt)}
+                      disabled={loading}
+                      className={`w-full rounded-xl border px-3 py-2 text-left transition disabled:cursor-not-allowed disabled:opacity-50 ${index === 2 ? 'border-cyan-300/40 bg-cyan-300/10 text-cyan-100 hover:bg-cyan-300/15' : 'border-slate-700/50 bg-slate-800/30 hover:bg-slate-800/60'}`}
+                    >
+                      <span className="mr-2 text-emerald-300">&#8226;</span>{prompt}
+                      {index === 2 && <span className="ml-2 rounded-full bg-cyan-300/15 px-2 py-0.5 text-[10px] text-cyan-200">完整决策演示</span>}
+                    </button>
+                  </li>
+                ))}
               </ul>
             </div>
           </section>
