@@ -55,6 +55,7 @@ Tool layer:
 - Calendar data belongs to the demo snapshot. Do not invent year-wide ranges; omit date ranges when a keyword is enough.
 - A charging station's distance is only the distance from the car to that station. NEVER reuse it as the distance to the driver's destination.
 - If navigation, calendar, or the driver has not provided a destination distance, ask one short clarification question instead of estimating it.
+- If the driver explicitly provides a one-way distance and says whether the trip is one-way or round-trip, treat those values as trusted: read vehicle status, assess trip energy, search available stations when charging is needed, then present one main option and at most one backup. Do not ask for information the driver already supplied.
 - Do not claim the driver can arrive on time unless route travel time plus wait/charge time is known and fits the available window.
 
 Memory layer:
@@ -100,17 +101,20 @@ function buildDecision(toolCalls) {
   if (!vehicle && !assessment && !stations.length && !plan) return null;
 
   const needsCharge = assessment ? !assessment.sufficient : Number(vehicle?.soc) < 20;
-  const options = stations.slice(0, 2).map((station, index) => ({
-    id: station.id,
-    rank: index + 1,
-    label: index === 0 ? '主方案' : '备选方案',
-    name: station.name,
-    distance_km: station.distance_km,
-    maxPower_kW: station.maxPower_kW,
-    availablePorts: station.availablePorts,
-    estimatedWait_min: station.estimatedWait_min,
-    pricePerKWh: station.pricePerKWh,
-  }));
+  const options = stations
+    .filter((station) => station.availablePorts === undefined || station.availablePorts > 0)
+    .slice(0, 2)
+    .map((station, index) => ({
+      id: station.id,
+      rank: index + 1,
+      label: index === 0 ? '主方案' : '备选方案',
+      name: station.name,
+      distance_km: station.distance_km,
+      maxPower_kW: station.maxPower_kW,
+      availablePorts: station.availablePorts,
+      estimatedWait_min: station.estimatedWait_min,
+      pricePerKWh: station.pricePerKWh,
+    }));
 
   return {
     state: plan?.status || (options.length ? 'recommended' : 'assessed'),
@@ -177,6 +181,9 @@ function createMockResponse(messages, memory) {
   const isTripDecision = /分钟后|小时后|往返|开会|接人|机场|目的地/.test(latest);
   const approvedPlan = /(^|[，。,.!\s])yes([，。,.!\s]|$)|确认主方案|同意|按这个来/i.test(latest);
   const deferredPlan = /(^|[，。,.!\s])no([，。,.!\s]|$)|暂不执行|保留为待办|稍后提醒/i.test(latest);
+  const distanceMatch = latest.match(/(\d+(?:\.\d+)?)\s*(?:km|公里)/i);
+  const explicitDistance = distanceMatch ? Number(distanceMatch[1]) : null;
+  const isRoundTrip = /往返/.test(latest);
 
   if (approvedPlan || deferredPlan) {
     toolCalls.push({
@@ -189,6 +196,11 @@ function createMockResponse(messages, memory) {
       ? '已确认主方案并创建补能任务。我会在出发前再次检查站点状态；导航或支付仍需你在车机端最终确认。'
       : '已将主方案保留为待办，稍后提醒。站点状态变化时我会重新评估，不会直接执行导航或支付。';
   } else if (isTripDecision && (latest.includes('电量') || latest.includes('够') || latest.includes('续航'))) {
+    const oneWayDistance = explicitDistance || 3.5;
+    const tripDistance = Number((oneWayDistance * (isRoundTrip ? 2 : 1)).toFixed(1));
+    const requiredRange = Number((tripDistance + 20).toFixed(1));
+    const availableRange = 62;
+    const shortage = Number(Math.max(0, requiredRange - availableRange).toFixed(1));
     toolCalls.push({
       id: `toolu_${Date.now()}`,
       name: 'get_vehicle_status',
@@ -199,13 +211,22 @@ function createMockResponse(messages, memory) {
       id: `toolu_${Date.now() + 1}`,
       name: 'get_calendar_events',
       input: { keyword: '浦东' },
-      result: [{ title: 'Client meeting at Pudong Office', distance_km: 3.5 }],
+      result: [{ title: latest.includes('机场') ? 'Airport pickup at Pudong Airport' : 'Client meeting at Pudong Office', distance_km: oneWayDistance }],
     });
     toolCalls.push({
       id: `toolu_${Date.now() + 2}`,
       name: 'assess_trip_energy',
-      input: { distance_km: 3.5, roundTrip: true, reserveRange_km: 20 },
-      result: { sufficient: true, requiredRange_km: 27, availableRange_km: 62, reserveRange_km: 20 },
+      input: { distance_km: oneWayDistance, roundTrip: isRoundTrip, reserveRange_km: 20 },
+      result: {
+        sufficient: shortage === 0,
+        distance_km: oneWayDistance,
+        roundTrip: isRoundTrip,
+        tripDistance_km: tripDistance,
+        requiredRange_km: requiredRange,
+        availableRange_km: availableRange,
+        shortage_km: shortage,
+        reserveRange_km: 20,
+      },
     });
     toolCalls.push({
       id: `toolu_${Date.now() + 3}`,
@@ -216,7 +237,9 @@ function createMockResponse(messages, memory) {
         { id: 'cs-001', name: 'Tesla Supercharger - Lujiazui Center', distance_km: 3.2, availablePorts: 5, maxPower_kW: 250, estimatedWait_min: 0 },
       ],
     });
-    reply = '结论：本次往返预计需要 27km（含 20km 安全余量），当前续航 62km，可以准时完成。考虑 SOC 只有 18%，建议会后执行主方案补能；我只保留一个备选。是否执行主方案？';
+    reply = shortage > 0
+      ? `结论：本次${isRoundTrip ? '往返' : '单程'}需 ${requiredRange}km（含 20km 安全余量），当前续航 62km，仍缺 ${shortage}km。建议先补能；主方案为 NIO 人民广场，备选为 Tesla 陆家嘴超充。是否执行主方案？`
+      : `结论：本次${isRoundTrip ? '往返' : '单程'}需 ${requiredRange}km（含 20km 安全余量），当前续航 62km，可以覆盖。考虑 SOC 只有 18%，建议行程后补能；是否执行主方案？`;
   } else if (latest.includes('电量') || latest.includes('battery') || latest.includes('状态') || latest.includes('status')) {
     toolCalls.push({
       id: `toolu_${Date.now()}`,

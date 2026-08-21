@@ -3,11 +3,12 @@ import { BRAND } from './ui';
 import StationCard from './StationCard';
 import AmapView, { AMAP_MAP_ENABLED } from '../components/AmapView';
 import DecisionCard from '../components/DecisionCard';
+import DecisionJourney from '../components/DecisionJourney';
 
 const CHIPS = [
   '现在电量够不够用？',
   '附近有什么充电站？',
-  '后天去浦东机场，电量够吗？',
+  '后天去浦东机场接人，单程45公里、需要往返，电量够吗？',
   '上次的充电建议还在吗？',
 ];
 
@@ -64,6 +65,8 @@ export default function AgentScreen({ messages, toolCalls, loading, error, onSen
             ))}
           </div>
         )}
+
+        <DecisionJourney messages={messages} toolCalls={toolCalls} compact />
 
         {toolCalls.length > 0 && (
           <div className="rounded-2xl border border-slate-200 bg-white">

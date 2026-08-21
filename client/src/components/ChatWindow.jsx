@@ -41,7 +41,7 @@ export default function ChatWindow({ messages, loading, error, onSend, onReset }
           <textarea
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            placeholder="Try: 帮我看看电量够不够用 / 附近有什么充电站？/ 后天要去机场接人电量够吗？"
+            placeholder="Try: 后天去浦东机场接人，单程45公里、需要往返，电量够吗？"
             className="min-h-24 flex-1 rounded-2xl border border-slate-700 bg-slate-950/80 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500"
           />
           <button
