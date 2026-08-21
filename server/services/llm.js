@@ -57,6 +57,7 @@ Tool layer:
 - A charging station's distance is only the distance from the car to that station. NEVER reuse it as the distance to the driver's destination.
 - If navigation, calendar, or the driver has not provided a destination distance, ask one short clarification question instead of estimating it.
 - If the driver explicitly provides a one-way distance and says whether the trip is one-way or round-trip, treat those values as trusted: read vehicle status, assess trip energy, search available stations when charging is needed, then present one main option and at most one backup. Do not ask for information the driver already supplied.
+- Station search is read-only and never needs a separate user confirmation. For a trusted-distance trip with insufficient range, you MUST finish the station search and option comparison in the same turn; only ask for Yes/No after the two options are ready.
 - Do not claim the driver can arrive on time unless route travel time plus wait/charge time is known and fits the available window.
 
 Memory layer:
@@ -411,6 +412,33 @@ export async function runAgentTurn(messages) {
   }
 
   let assistantText = getText(response);
+
+  // A read-only safety fallback keeps the flagship trip demo continuous even
+  // if the model prematurely asks permission to search. The governed write
+  // (create_charge_plan) still requires the user's explicit Yes afterwards.
+  const assessmentCall = [...toolCalls].reverse().find((call) => call.name === 'assess_trip_energy');
+  const hasStationSearch = toolCalls.some((call) => call.name === 'search_nearby_stations');
+  const trustedDistances = getTrustedTripDistances(messages, toolCalls);
+  if (assessmentCall?.result?.sufficient === false && !hasStationSearch && trustedDistances.length) {
+    const prefersTesla = memory.facts?.some((fact) => /tesla/i.test(fact.content || ''));
+    const input = {
+      maxDistance_km: 10,
+      minPower_kW: 100,
+      sortBy: 'distance',
+      ...(prefersTesla ? { network: 'Tesla' } : {}),
+    };
+    try {
+      const result = await executeTool('search_nearby_stations', input, { allowWrite: false, trustedTripDistances });
+      toolCalls.push({ id: `toolu_${Date.now()}`, name: 'search_nearby_stations', input, result, round: rounds + 1 });
+      const available = result.filter((station) => station.availablePorts === undefined || station.availablePorts > 0).slice(0, 2);
+      const assessment = assessmentCall.result;
+      const [main, backup] = available;
+      assistantText = `结论：本次往返需 ${assessment.requiredRange_km}km（含 ${assessment.reserveRange_km}km 安全余量），当前续航 ${assessment.availableRange_km}km，仍缺 ${assessment.shortage_km}km，建议出发前补能。主方案：${main?.name || '附近可用快充站'}${main ? `（${main.distance_km}km、${main.maxPower_kW}kW、${main.availablePorts}个空位）` : ''}${backup ? `；备选：${backup.name}（${backup.distance_km}km、${backup.maxPower_kW}kW、${backup.availablePorts}个空位）` : ''}。是否执行主方案？`;
+    } catch {
+      // Keep the model response when the read-only fallback itself is unavailable.
+    }
+  }
+
   if (!assistantText) {
     assistantText = toolCalls.length >= MAX_TOOL_CALLS || rounds >= MAX_AGENT_ROUNDS
       ? '我已完成当前可用信息的检查，但达到本轮安全执行上限。请确认是否继续生成补能方案。'
