@@ -61,12 +61,13 @@ export function useChat() {
         && !responseToolCalls.some((call) => call.name === 'search_nearby_stations');
       if (needsStationFallback) {
         try {
-          const stations = await api.getStations({
+          const stationsResult = await api.getStations({
             maxDistance_km: 10,
             minPower_kW: 100,
             network: 'Tesla',
             sortBy: 'distance',
           });
+          const stations = Array.isArray(stationsResult) ? stationsResult : stationsResult.stations || [];
           const available = stations
             .filter((station) => station.availablePorts === undefined || station.availablePorts > 0)
             .slice(0, 2);
