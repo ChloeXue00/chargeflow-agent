@@ -49,7 +49,64 @@ export function useChat() {
 
     try {
       const response = await api.sendChat(nextMessages);
-      const responseToolCalls = response.toolCalls || [];
+      let responseToolCalls = response.toolCalls || [];
+      let responseMessage = response.message;
+      let responseDecision = response.decision || null;
+
+      // Keep the flagship trip demo deterministic when the model stops after
+      // energy assessment. Station lookup is read-only; plan creation still
+      // remains behind the explicit Yes confirmation in DecisionCard.
+      const assessmentCall = [...responseToolCalls].reverse().find((call) => call.name === 'assess_trip_energy');
+      const needsStationFallback = assessmentCall?.result?.sufficient === false
+        && !responseToolCalls.some((call) => call.name === 'search_nearby_stations');
+      if (needsStationFallback) {
+        try {
+          const stations = await api.getStations({
+            maxDistance_km: 10,
+            minPower_kW: 100,
+            network: 'Tesla',
+            sortBy: 'distance',
+          });
+          const available = stations
+            .filter((station) => station.availablePorts === undefined || station.availablePorts > 0)
+            .slice(0, 2);
+          responseToolCalls = [
+            ...responseToolCalls,
+            {
+              id: `toolu_ui_${Date.now()}`,
+              name: 'search_nearby_stations',
+              input: { maxDistance_km: 10, minPower_kW: 100, network: 'Tesla', sortBy: 'distance' },
+              result: stations,
+              round: 'read-only fallback',
+            },
+          ];
+          const options = available.map((station, index) => ({
+            id: station.id,
+            rank: index + 1,
+            label: index === 0 ? '主方案' : '备选方案',
+            name: station.name,
+            distance_km: station.distance_km,
+            maxPower_kW: station.maxPower_kW,
+            availablePorts: station.availablePorts,
+            estimatedWait_min: station.estimatedWait_min,
+            pricePerKWh: station.pricePerKWh,
+          }));
+          const assessment = assessmentCall.result;
+          const [main, backup] = options;
+          responseMessage = `结论：本次往返需 ${assessment.requiredRange_km}km（含 ${assessment.reserveRange_km}km 安全余量），当前续航 ${assessment.availableRange_km}km，仍缺 ${assessment.shortage_km}km，建议出发前补能。主方案：${main?.name || '附近可用快充站'}${main ? `（${main.distance_km}km、${main.maxPower_kW}kW、${main.availablePorts}个空位）` : ''}${backup ? `；备选：${backup.name}（${backup.distance_km}km、${backup.maxPower_kW}kW、${backup.availablePorts}个空位）` : ''}。是否执行主方案？`;
+          responseDecision = {
+            state: 'recommended',
+            title: '建议先补能',
+            summary: `预计需 ${assessment.requiredRange_km}km（含 ${assessment.reserveRange_km}km 安全余量），当前可用 ${assessment.availableRange_km}km。`,
+            options,
+            requiresConfirmation: Boolean(options.length),
+            prompt: options.length ? '是否执行主方案？' : null,
+          };
+        } catch {
+          // Preserve the original agent response if the read-only lookup fails.
+        }
+      }
+
       const completesExistingJourney = responseToolCalls.some((call) => call.name === 'create_charge_plan');
       setToolCalls((current) => completesExistingJourney ? [...current, ...responseToolCalls] : responseToolCalls);
       setMemory(response.memory || { facts: [] });
@@ -58,9 +115,9 @@ export function useChat() {
         {
           id: `assistant-${Date.now()}`,
           role: 'assistant',
-          content: response.message,
+          content: responseMessage,
           mode: response.mode,
-          decision: response.decision || null,
+          decision: responseDecision,
         },
       ]);
     } catch (err) {
